@@ -8,7 +8,7 @@ from train_pipeline import caltech
 
 if __name__ == "__main__":
     gen = caltech()
-    use_saved = True
+    use_saved = False
     if use_saved and exists("pickle/model.p"):
         model = pickle.load(open("pickle/model.p", "rb"))
     else:

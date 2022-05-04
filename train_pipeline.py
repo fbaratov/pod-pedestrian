@@ -93,7 +93,6 @@ def prep_data():
                     "image": img_path,
                     "boxes": boxes
                 })
-        break
     return data
 
 
@@ -107,29 +106,16 @@ def caltech(get_pickle=True):
     class_names = ['person', 'people']
     augmentator = AugmentCaltech(num_classes=len(class_names))
 
-    draw_boxes = SequentialProcessor([
+    """draw_boxes = SequentialProcessor([
         pr.ControlMap(pr.ToBoxes2D(class_names, True), [1], [1]),
         pr.ControlMap(pr.DenormalizeBoxes2D(), [0, 1], [1], {0: 0}),
         pr.DrawBoxes2D(class_names),
-        pr.ShowImage()])
+        pr.ShowImage()])"""
 
     print('Image and boxes augmentations with generator')
     batch_size = 5
     sequence = ProcessingSequence(augmentator, batch_size, data)
-    for i in sample(range(0, 1000), 5):
-        try:
-            batch = sequence.__getitem__(i)
-        except:
-            print("continue")
-            continue
-        batch_images, batch_boxes = batch[0]['image'], batch[1]['boxes']
-        image, boxes = batch_images[0], batch_boxes[0]
-        image = deprocess_image(image)
-        print(boxes[0])
-        for i, b in enumerate(boxes):
-            if b[0] >= b[2] or b[1] >= b[3]:
-                np.delete(boxes, i)
-
+    pickle.dump(sequence, open("pickle/sequence.p", "wb"))
     return sequence
 
 
