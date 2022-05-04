@@ -28,7 +28,7 @@ class PreprocessBoxes(SequentialProcessor):
     def __init__(self, num_classes, prior_boxes, IOU, variances):
         super(PreprocessBoxes, self).__init__()
         self.add(pr.MatchBoxes(prior_boxes, IOU), )
-        #self.add(pr.EncodeBoxes(prior_boxes, variances))
+        # self.add(pr.EncodeBoxes(prior_boxes, variances))
         self.add(pr.BoxClassToOneHotVector(num_classes))
 
 
@@ -54,12 +54,12 @@ class AugmentCaltech(SequentialProcessor):
                  variances=[0.1, 0.1, 0.2, 0.2]):
         super(AugmentCaltech, self).__init__()
         # image processors
-        self.augment_image = AugmentImage()
-        self.augment_image.add(pr.ConvertColorSpace(pr.RGB2BGR))
+        # self.augment_image = AugmentImage()
+        # self.augment_image.add(pr.ConvertColorSpace(pr.RGB2BGR))
         self.preprocess_image = PreprocessImage((size, size), mean)
 
         # box processors
-        self.augment_boxes = AugmentBoxes()
+        # self.augment_boxes = AugmentBoxes()
         prior_boxes = create_prior_boxes()
         args = (num_classes, prior_boxes, IOU, variances)
         self.preprocess_boxes = PreprocessBoxes(*args)
@@ -67,9 +67,9 @@ class AugmentCaltech(SequentialProcessor):
         # pipeline
         self.add(pr.UnpackDictionary(['image', 'boxes']))
         self.add(pr.ControlMap(pr.LoadImage(), [0], [0]))
-        if split == pr.TRAIN:
-            self.add(pr.ControlMap(self.augment_image, [0], [0]))
-            self.add(pr.ControlMap(self.augment_boxes, [0, 1], [0, 1]))
+        #if split == pr.TRAIN:
+            # self.add(pr.ControlMap(self.augment_image, [0], [0]))
+            # self.add(pr.ControlMap(self.augment_boxes, [0, 1], [0, 1]))
         self.add(pr.ControlMap(self.preprocess_image, [0], [0]))
         self.add(pr.ControlMap(self.preprocess_boxes, [1], [1]))
         self.add(pr.SequenceWrapper(

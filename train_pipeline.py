@@ -1,4 +1,7 @@
 import os
+from os.path import exists
+
+import pickle
 from random import random, sample
 
 import numpy as np
@@ -82,7 +85,7 @@ def prep_data():
                 # extract boxes
                 boxes = extract_box_caltech(annot_path)
 
-                if len(boxes) == 0:
+                if len(boxes) == 0: # remove all frames with no boxes
                     continue
 
                 # append to full set
@@ -90,13 +93,15 @@ def prep_data():
                     "image": img_path,
                     "boxes": boxes
                 })
-                #if data:
-                    #break
         break
     return data
 
 
-def caltech():
+def caltech(get_pickle=True):
+    if get_pickle and exists("pickle/sequence.p"):
+        sequence = pickle.load(open("pickle/sequence.p", "rb"))
+        return sequence
+
     data = prep_data()
 
     class_names = ['person', 'people']
@@ -121,12 +126,11 @@ def caltech():
         image, boxes = batch_images[0], batch_boxes[0]
         image = deprocess_image(image)
         print(boxes[0])
-        for i,b in enumerate(boxes):
+        for i, b in enumerate(boxes):
             if b[0] >= b[2] or b[1] >= b[3]:
                 np.delete(boxes, i)
-        #draw_boxes(image, boxes)
 
-    return
+    return sequence
 
 
 if __name__ == "__main__":
