@@ -12,6 +12,8 @@ from paz.models.detection.utils import create_prior_boxes
 import paz.processors as pr
 from sklearn.model_selection import train_test_split
 
+from CaltechLoader import DictLoader
+
 
 class CaltechPreprocessBoxes(SequentialProcessor):
     """Preprocess bounding boxes. Modified version of PreprocessBoxes class.
@@ -163,10 +165,10 @@ def caltech(get_pickle=True):
     :param get_pickle: If True, uses saved splits instead of generating new ones.
     :return: Train and test processors for the data.
     """
-    if get_pickle and exists("pickle/sequence.p"):
+    if get_pickle and exists("pickle/train.p"):
         train = pickle.load(open("pickle/train.p", "rb"))
-        val = None
-        return train, val
+        test = pickle.load(open("pickle/test.p", "rb"))
+        return train, test
 
     # create classes/augmentator
     data = prep_data()
@@ -185,10 +187,10 @@ def caltech(get_pickle=True):
     # create and save sequences
     batch_size = 5
     train_seq = ProcessingSequence(augmentator, batch_size, train_data)
-    test_seq = ProcessingSequence(augmentator, batch_size, test_data)
+    test_loader = DictLoader(test_data)
     pickle.dump(train_seq, open("pickle/train.p", "wb"))
-    pickle.dump(test_seq, open("pickle/test.p", "wb"))
-    return train_seq, test_seq
+    pickle.dump(test_loader, open("pickle/test.p", "wb"))
+    return train_seq, test_loader
 
 
 if __name__ == "__main__":

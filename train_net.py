@@ -2,6 +2,7 @@ from keras.models import load_model
 from os.path import exists
 
 from paz.models.detection.ssd300 import SSD300
+from paz.optimization.callbacks import EvaluateMAP
 
 from prep_caltech import caltech
 
@@ -53,11 +54,13 @@ def train_model(saved_data=False, saved_model=False):
 
 def evaluate_model(model):
     _, test = get_splits(True)
-    score = model.evaluate(test, verbose=0)
-    print(score)
-    print('Test loss:', score[0])
-    print('Test accuracy:', score[1])
+    #score = model.evaluate(test, verbose=0)
+    EvaluateMAP(test, model, 1, "models/eval")
+    #print(score)
+    #print('Test loss:', score[0])
+    #('Test accuracy:', score[1])
+
 
 if __name__ == "__main__":
-    model = train_model()
+    model = train_model(False, False)
     evaluate_model(model)
