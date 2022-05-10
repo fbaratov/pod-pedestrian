@@ -45,8 +45,9 @@ def get_splits(use_saved=False):
 
 
 def train_model(saved_data=False, saved_model=False):
-    train, _ = get_splits(saved_data)
+    train, test = get_splits(saved_data)
     model = get_model(saved_model)
+    EvaluateMAP(test, model, 1000, "eval.txt")
     if not saved_model:
         model = fit_model(model, train)
     return model
@@ -54,13 +55,13 @@ def train_model(saved_data=False, saved_model=False):
 
 def evaluate_model(model):
     _, test = get_splits(True)
-    #score = model.evaluate(test, verbose=0)
-    EvaluateMAP(test, model, 1, "models/eval")
-    #print(score)
-    #print('Test loss:', score[0])
-    #('Test accuracy:', score[1])
+    # score = model.evaluate(test, verbose=0)
+
+    # print(score)
+    # print('Test loss:', score[0])
+    # ('Test accuracy:', score[1])
 
 
 if __name__ == "__main__":
-    model = train_model(False, False)
-    evaluate_model(model)
+    model = train_model(True, False)
+    # evaluate_model(model)
