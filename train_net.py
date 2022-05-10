@@ -1,20 +1,25 @@
+from keras.layers import Reshape
 from keras.models import load_model
 from os.path import exists
 
+from custom_map import evaluateMAP
 from paz.models.detection.ssd300 import SSD300
 from paz.optimization.callbacks import EvaluateMAP
 
+from CaltechLoader import DictLoader
 from prep_caltech import caltech
 
 
-def fit_model(model, data):
+def fit_model(model, data, callbacks=None):
     """
     Fits model to data.
     :param model: Model to fit
     :param data: Training dataset
     :return: Model fitted to data
     """
-    model.fit(data)
+    if callbacks is None:
+        callbacks = []
+    model.fit(data, callbacks=callbacks)
     model.save("models/model")
     return model
 
@@ -44,24 +49,37 @@ def get_splits(use_saved=False):
     return train, test
 
 
-def train_model(saved_data=False, saved_model=False):
-    train, test = get_splits(saved_data)
+def train_model(data, saved_model=False):
+    """
+    Trains model on given data or retrieves trained model.
+    :param data: Training data as a processing sequence
+    :param saved_model: If True, uses saved model instead of training new one.
+    :return: SSD300 model
+    """
     model = get_model(saved_model)
-    EvaluateMAP(test, model, 1000, "eval.txt")
     if not saved_model:
-        model = fit_model(model, train)
+        model = fit_model(model, data)
     return model
 
 
-def evaluate_model(model):
-    _, test = get_splits(True)
-    # score = model.evaluate(test, verbose=0)
-
-    # print(score)
+def evaluate_model(test, model):
+    """
+    Evaluates model using given dataset.
+    :param test: Test dataset as a dict of format {img_path: [bbox_vectors]}
+    :param model: PAZ model
+    :return:
+    """
+    test_data = test
+    score = evaluateMAP(model, test_data, {"person": 1, "people": 2})
+    print(score)
     # print('Test loss:', score[0])
     # ('Test accuracy:', score[1])
 
 
 if __name__ == "__main__":
-    model = train_model(True, False)
-    # evaluate_model(model)
+    saved_data = True
+    saved_model = True and saved_data
+
+    train, test = get_splits(saved_data)
+    model = train_model(train, saved_model)
+    evaluate_model(test, model)

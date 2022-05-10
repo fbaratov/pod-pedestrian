@@ -1,3 +1,4 @@
+import numpy as np
 from paz.abstract import Loader
 
 
@@ -6,7 +7,7 @@ class DictLoader(Loader):
     Loader initialized from a list of dictionaries.
     """
 
-    def __init__(self, img_list, path=None, split="test", class_names=('person', 'people'), name="CALTECH"):
+    def __init__(self, img_list, path="D:/.datasets/CALTECH_PEDESTRIAN/unpacked", split="test", class_names=('person', 'people'), name="CALTECH"):
         """
         Initializes Loader from list.
         :param img_list: List of images/boxes in the format [{img_path,bbox_vectors},...]
@@ -18,7 +19,8 @@ class DictLoader(Loader):
     def list_to_dict(self, img_list):
         img_dict = {}
         for d in img_list:
-            img_dict[d["image"]] = d["boxes"]  # convert format
+            boxes = [np.asarray(b) for b in d["boxes"]]
+            img_dict[d["image"]] = boxes  # convert format
         return img_dict
 
     def load_data(self):

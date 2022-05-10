@@ -165,18 +165,19 @@ def caltech(get_pickle=True):
     :param get_pickle: If True, uses saved splits instead of generating new ones.
     :return: Train and test processors for the data.
     """
-    if get_pickle and exists("pickle/train.p"):
-        train = pickle.load(open("pickle/train.p", "rb"))
-        test = pickle.load(open("pickle/test.p", "rb"))
-        return train, test
+    if get_pickle and exists("pickle/train.p") and exists("pickle/test.p"):
+        train_data = pickle.load(open("pickle/train.p", "rb"))
+        test_data = pickle.load(open("pickle/test.p", "rb"))
+    else:
+        data = prep_data()
+        # split test/train
+        train_data, test_data = train_test_split(data, test_size=0.2)
+        pickle.dump(train_data, open("pickle/train.p", "wb"))
+        pickle.dump(test_data, open("pickle/test.p", "wb"))
 
     # create classes/augmentator
-    data = prep_data()
-    train_data, test_data = train_test_split(data, test_size=0.2)
     class_names = ['person', 'people']
     augmentator = AugmentCaltech(num_classes=len(class_names))
-
-    # split test/train
 
     """draw_boxes = SequentialProcessor([
         pr.ControlMap(pr.ToBoxes2D(class_names, True), [1], [1]),
@@ -187,10 +188,9 @@ def caltech(get_pickle=True):
     # create and save sequences
     batch_size = 5
     train_seq = ProcessingSequence(augmentator, batch_size, train_data)
-    test_loader = DictLoader(test_data)
-    pickle.dump(train_seq, open("pickle/train.p", "wb"))
-    pickle.dump(test_loader, open("pickle/test.p", "wb"))
-    return train_seq, test_loader
+    #test_seq = ProcessingSequence(augmentator, batch_size, test_data)
+
+    return train_seq, test_data
 
 
 if __name__ == "__main__":
