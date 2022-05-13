@@ -1,3 +1,7 @@
+from paz.models.detection.utils import create_prior_boxes
+
+import pickle
+
 import numpy as np
 from cv2 import cvtColor, COLOR_BGR2RGB
 from keras.layers import Reshape
@@ -20,17 +24,17 @@ class Trainer:
     def __init__(self, saved_data=False, saved_model=False):
         """
         Initializes model and train/test splits.
-        :param saved_data: If True, uses saved dataset splits isntead of making new ones.
+        :param saved_data: If True, uses saved dataset splits instead of making new ones.
         :param saved_model: If True, uses saved model instead of training a new one.
         """
 
-        self.train, self.test, self.model = None, None, None
+        self.d_train, self.d_test, self.model = None, None, None
 
         self.is_trained = saved_model and saved_data  # if new splits are generated, model needs retraining
         self.get_model(saved_model)
         self.get_splits(saved_data)
 
-    def get_model(self, use_saved=False):
+    def get_model(self, use_saved):
         """
         Creates and compiles a SSD300 model.
         :param use_saved: If True, uses saved model instead of training a new one.
@@ -38,17 +42,18 @@ class Trainer:
         """
         if use_saved and exists("models/model"):
             self.model = load_model("models/model")
+            self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
         else:
             self.model = SSD300(num_classes=2, base_weights=None, head_weights=None)
             self.model.compile()
 
-    def get_splits(self, use_saved=False):
+    def get_splits(self, use_saved):
         """
-        Gets train/test splits of the data.
+        Gets d_train/d_test splits of the data.
         :param use_saved: If True, uses saved splits instead of making new ones.
         :return: Processors for train/test splits
         """
-        self.train, self.test = caltech(use_saved)
+        self.d_train, self.d_test = caltech(use_saved)
 
     def train(self, callbacks=None):
         """
@@ -59,8 +64,9 @@ class Trainer:
             callbacks = []
 
         if not self.is_trained:
-            self.model.fit(self.train, callbacks=callbacks)
+            self.model.fit(self.d_train, callbacks=callbacks)
             self.model.save("models/model")
+            pickle.dump(self.model.prior_boxes, open("models/prior_boxes.p", "wb"))
         else:
             print("Model is already trained!")
 
@@ -79,14 +85,15 @@ class Trainer:
         Evaluates model using test dataset.
         :return: Model scores or something
         """
+        print(len(self.d_test))
         detector = DetectSingleShot(self.model, ["person", "people"], .5, .5, draw=True)
-        eval = evaluateMAP(detector, self.train, {"person": 1, "people": 2})
+        eval = evaluateMAP(detector, self.d_test, {"person": 1, "people": 2})
         return eval
 
 
 if __name__ == "__main__":
     saved_data = True
     saved_model = True
-
     trainer = Trainer(saved_data, saved_model)
+    #trainer.train()
     print(trainer.evaluate())

@@ -4,7 +4,6 @@ from os.path import exists
 from paz.pipelines import PreprocessImage
 
 import pickle
-from random import random, sample
 
 import numpy as np
 from paz.abstract import ProcessingSequence, SequentialProcessor
@@ -159,20 +158,20 @@ def prep_data(test_split=0.3):
 
 def caltech(get_pickle=True):
     """
-    Creates a processor that can be used to train a model on the caltech pedestrian dataset.
+    Creates a processor that can be used to d_train a model on the caltech pedestrian dataset.
     :param get_pickle: If True, uses saved splits instead of generating new ones.
-    :return: Train and test processors for the data.
+    :return: Train and d_test processors for the data.
     """
     if get_pickle and exists("pickle/train.p") and exists("pickle/test.p"):
         train_data = pickle.load(open("pickle/train.p", "rb"))
         test_data = pickle.load(open("pickle/test.p", "rb"))
     else:
         data = prep_data()
-        # split test/train
+        # split d_test/d_train
         train_data, test_data = train_test_split(data, test_size=0.2)
         pickle.dump(train_data, open("pickle/train.p", "wb"))
         pickle.dump(test_data, open("pickle/test.p", "wb"))
-
+    print(f"train size: {train_data}\ntest size: {test_data}")
     # create classes/augmentator
     class_names = ['person', 'people']
     augmentator = AugmentCaltech(num_classes=len(class_names))
@@ -186,7 +185,6 @@ def caltech(get_pickle=True):
     # create and save sequences
     batch_size = 5
     train_seq = ProcessingSequence(augmentator, batch_size, train_data)
-
     return train_seq, test_data
 
 
