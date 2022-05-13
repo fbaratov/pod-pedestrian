@@ -85,7 +85,6 @@ class Trainer:
         Evaluates model using test dataset.
         :return: Model scores or something
         """
-        print(len(self.d_test))
         detector = DetectSingleShot(self.model, ["person", "people"], .5, .5, draw=True)
         eval = evaluateMAP(detector, self.d_test, {"person": 1, "people": 2})
         return eval
