@@ -12,8 +12,6 @@ from paz.models.detection.utils import create_prior_boxes
 import paz.processors as pr
 from sklearn.model_selection import train_test_split
 
-from CaltechLoader import DictLoader
-
 
 class CaltechPreprocessBoxes(SequentialProcessor):
     """Preprocess bounding boxes. Modified version of PreprocessBoxes class.
@@ -188,7 +186,6 @@ def caltech(get_pickle=True):
     # create and save sequences
     batch_size = 5
     train_seq = ProcessingSequence(augmentator, batch_size, train_data)
-    #test_seq = ProcessingSequence(augmentator, batch_size, test_data)
 
     return train_seq, test_data
 
