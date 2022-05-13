@@ -1,14 +1,14 @@
-from paz.models.detection.utils import create_prior_boxes
+from random import random, sample
+
+import numpy as np
+from paz.backend.image import load_image
+from paz.processors import ShowImage
 
 import pickle
 
-import numpy as np
-from cv2 import cvtColor, COLOR_BGR2RGB
-from keras.layers import Reshape
-from keras.models import load_model, Sequential
+from keras.models import load_model
 from os.path import exists
 
-from paz.backend.image import resize_image
 from paz.evaluation import evaluateMAP
 from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
@@ -70,15 +70,16 @@ class Trainer:
         else:
             print("Model is already trained!")
 
-    def predict(self, image):
+    def predict_model(self, fp):
         """
         Uses model to make a prediction with the given image.
-        :param image: OpenCV image
+        :param fp: image filepath
         :return: BBox prediction
         """
-        # image = resize_image(image, (300, 300))
-        # image = np.array([cvtColor(image, COLOR_BGR2RGB)])
-        # output = self.model(image)
+        images = load_image(fp)
+        detector = DetectSingleShot(self.model, ["person", "people"], .5, .5, draw=True)
+        results = detector(images)
+        return results
 
     def evaluate(self):
         """
@@ -92,7 +93,13 @@ class Trainer:
 
 if __name__ == "__main__":
     saved_data = True
-    saved_model = True
+    saved_model = False
     trainer = Trainer(saved_data, saved_model)
-    #trainer.train()
-    print(trainer.evaluate())
+    trainer.train()
+    draw_boxes = ShowImage()
+    for d in sample(trainer.d_test, 10):
+        fp = d["image"]
+        results = trainer.predict_model(fp)
+        print(results)
+        draw_boxes(results["image"])
+    #print(trainer.evaluate())

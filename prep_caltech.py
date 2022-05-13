@@ -171,16 +171,10 @@ def caltech(get_pickle=True):
         train_data, test_data = train_test_split(data, test_size=0.2)
         pickle.dump(train_data, open("pickle/train.p", "wb"))
         pickle.dump(test_data, open("pickle/test.p", "wb"))
-    print(f"train size: {train_data}\ntest size: {test_data}")
+    print(f"train size: {len(train_data)}\ntest size: {len(test_data)}")
     # create classes/augmentator
     class_names = ['person', 'people']
     augmentator = AugmentCaltech(num_classes=len(class_names))
-
-    """draw_boxes = SequentialProcessor([
-        pr.ControlMap(pr.ToBoxes2D(class_names, True), [1], [1]),
-        pr.ControlMap(pr.DenormalizeBoxes2D(), [0, 1], [1], {0: 0}),
-        pr.DrawBoxes2D(class_names),
-        pr.ShowImage()])"""
 
     # create and save sequences
     batch_size = 5
