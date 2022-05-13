@@ -1,5 +1,6 @@
 import os
 from os.path import exists
+from random import sample
 
 from paz.pipelines import PreprocessImage
 
@@ -156,30 +157,47 @@ def prep_data(test_split=0.3):
     return data
 
 
-def caltech(get_pickle=True):
+def caltech(use_saved=True, train_subset=None, test_split=0.3, val_split=0.1, batch_size=16):
     """
     Creates a processor that can be used to d_train a model on the caltech pedestrian dataset.
-    :param get_pickle: If True, uses saved splits instead of generating new ones.
+    :param train_subset: How much of the training subset to use for the training dataset represented as a decimal if None, uses whole subset.
+    :param test_split: How much of the whole dataset will be used for testing.
+    :param val_split: How much of the training dataset will be used for validation.
+    :param use_saved: If True, uses saved splits instead of generating new ones.
+    :param batch_size: Input batch size.
     :return: Train and d_test processors for the data.
     """
-    if get_pickle and exists("pickle/train.p") and exists("pickle/test.p"):
+    if not exists("pickle/dataset.p"):
+        data = prep_data()
+        pickle.dump(data, open("pickle/data.p", "wb"))
+
+    if use_saved and exists("pickle/train.p") and exists("pickle/test.p"):
         train_data = pickle.load(open("pickle/train.p", "rb"))
         test_data = pickle.load(open("pickle/test.p", "rb"))
     else:
-        data = prep_data()
+        data = pickle.load(open("pickle/dataset.p", "rb"))
         # split d_test/d_train
-        train_data, test_data = train_test_split(data, test_size=0.2)
+        train_data, test_data = train_test_split(data, test_size=test_split)
         pickle.dump(train_data, open("pickle/train.p", "wb"))
         pickle.dump(test_data, open("pickle/test.p", "wb"))
-    print(f"train size: {len(train_data)}\ntest size: {len(test_data)}")
-    # create classes/augmentator
+
+    # get train data subset
+    if train_subset:
+        train_data = sample(train_data, k=int(train_subset * len(train_data)))
+
+    # get validation subset
+    train_data, val_data = train_test_split(train_data, test_size=val_split)
+
+    # prep sequences
     class_names = ['person', 'people']
     augmentator = AugmentCaltech(num_classes=len(class_names))
 
     # create and save sequences
-    batch_size = 5
     train_seq = ProcessingSequence(augmentator, batch_size, train_data)
-    return train_seq, test_data
+    val_seq = ProcessingSequence(augmentator, batch_size, val_data)
+
+    print(f"train size: {len(train_data)}\ntest size: {len(test_data)}\nvalidation size: {len(val_data)}")
+    return train_seq, val_seq, test_data
 
 
 if __name__ == "__main__":
