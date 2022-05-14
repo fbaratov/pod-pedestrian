@@ -79,6 +79,7 @@ class Trainer:
                 x_val.append(x)
                 y_val.append(y)"""
             history = self.model.fit(self.d_train, callbacks=callbacks, epochs=epochs, validation_data=self.d_val)
+
             self.model.save("models/model")
             pickle.dump(self.model.prior_boxes, open("models/prior_boxes.p", "wb"))
             return history
@@ -104,24 +105,19 @@ class Trainer:
         :return: Model scores or something
         """
         detector = DetectSingleShot(self.model, ["person", "people"], .5, .5, draw=True)
-        eval = evaluateMAP(detector, self.d_test, {"person": 1, "people": 2})
+        eval = evaluateMAP(detector, self.d_test, {"person": 1})
         return eval
-
-
-def deprocess_image(image):
-    image = (image + BGR_IMAGENET_MEAN).astype('uint8')
-    return convert_color_space(image, BGR2RGB)
 
 
 if __name__ == "__main__":
     saved_data = True
-    saved_model = False
+    saved_model = True
     trainer = Trainer(saved_data,
                       saved_model,
-                      train_subset=0.5,
-                      test_split=0.3,
+                      train_subset=0.1,
+                      test_split=0.1,
                       val_split=0.1,
-                      batch_size=32
+                      batch_size=16
                       )
 
     cb = [EarlyStopping(monitor='val_loss',
@@ -130,15 +126,18 @@ if __name__ == "__main__":
                         verbose=1,
                         restore_best_weights=True)
           ]
+
     hist = trainer.train(callbacks=cb, epochs=10)
     if hist:
         plt.plot(hist.history["loss"])
         plt.show()
 
     draw_boxes = ShowImage()
-    for d in sample(trainer.d_test, k=10):
+    for d in trainer.d_test:
         fp = d["image"]
         results = trainer.predict_model(fp)
+        if not results["boxes2D"]:
+            continue
         print(results["boxes2D"])
         draw_boxes(results["image"])
     # print(trainer.evaluate())
