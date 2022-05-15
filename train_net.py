@@ -1,6 +1,7 @@
 from random import sample
 
 from keras.callbacks import EarlyStopping
+from keras.losses import SparseCategoricalCrossentropy
 from matplotlib import pyplot as plt
 from paz.backend.image import load_image, convert_color_space, BGR2RGB
 from paz.processors import ShowImage, BGR_IMAGENET_MEAN
@@ -48,8 +49,12 @@ class Trainer:
             self.model = load_model("models/model")
             self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
         else:
+            loss = SparseCategoricalCrossentropy(
+                from_logits=False, reduction="auto", name="custom_loss"
+            )
+
             self.model = SSD300(num_classes=2, base_weights=None, head_weights=None)
-            self.model.compile()
+            self.model.compile(loss=loss)
 
     def get_splits(self, use_saved, train_subset, test_split, val_split, batch_size):
         """
@@ -70,14 +75,15 @@ class Trainer:
         epochs: Number of epochs to train for
         force_train: If True, trains even if model is already trained.
         """
+
         if callbacks is None:
             callbacks = []
 
         if not self.is_trained or force_train:
             """            x_val, y_val = [], []
-            for x, y in self.d_val:
-                x_val.append(x)
-                y_val.append(y)"""
+                for x, y in self.d_val:
+                    x_val.append(x)
+                    y_val.append(y)"""
             history = self.model.fit(self.d_train, callbacks=callbacks, epochs=epochs, validation_data=self.d_val)
 
             self.model.save("models/model")
@@ -85,6 +91,7 @@ class Trainer:
             return history
         else:
             print("Model is already trained!")
+
             return None
 
     def predict_model(self, img, fp=True):
@@ -111,7 +118,7 @@ class Trainer:
 
 if __name__ == "__main__":
     saved_data = True
-    saved_model = True
+    saved_model = False
     trainer = Trainer(saved_data,
                       saved_model,
                       train_subset=0.1,
