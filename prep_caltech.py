@@ -12,6 +12,12 @@ from paz.abstract import ProcessingSequence, SequentialProcessor
 import paz.processors as pr
 from sklearn.model_selection import train_test_split
 
+class_labels = {
+    "background": 0,
+    "person": 1
+}
+class_names = list(class_labels.keys())
+
 
 def extract_box_caltech(file, width=640, height=480):
     """
@@ -24,9 +30,9 @@ def extract_box_caltech(file, width=640, height=480):
     model_labels = {
         "background": 0,
         "person": 1,
-        "person-fa": 1,
-        "person?": 1,
-        "people": 2
+        "person-fa": 3,
+        "person?": 4,
+        "people": 5
     }
 
     box_data = []
@@ -45,13 +51,16 @@ def extract_box_caltech(file, width=640, height=480):
             y1 = y0 + bh
             label_int = model_labels[label]
             if label_int != 1:  # skip crowds and invalid numbers
+                # print(f"Invalid label: {x0, y0, x1, y1, label}")
                 continue
             elif np.nan in (x0, y0, x1, y1) or np.inf in (x0, y0, x1, y1):
+                # print(f"Invalid coords: {x0, y0, x1, y1, label}")
                 continue
             elif not (x0 < x1 and y0 < y1):
+                # print(f"Invalid coords: {x0, y0, x1, y1, label}")
                 continue
 
-            box_data.append([x0 / width, y0 / height, x1 / width, y1 / height, label_int])
+            box_data.append([x0, y0, x1, y1, label_int])
 
     return np.array(box_data)
 
@@ -85,7 +94,7 @@ def prep_data(discard_negatives=False):
                 boxes = extract_box_caltech(annot_path)
 
                 if len(boxes) == 0:  # remove all frames with no boxes
-                    continue
+                    boxes.append(np.array([0, 1, 0, 1, 0]))
 
                 # append to full set
                 data.append({
@@ -95,44 +104,14 @@ def prep_data(discard_negatives=False):
     return data
 
 
-"""def make_processor():
-    \"""
-    Makes a processor pipeline to be used with ProcessingSequence.
-    :return: Sequential processor
-    \"""
-    size = 300
-    if exists("models/prior_boxes.p"):
-        prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
-    else:
-        prior_boxes = create_prior_boxes('VOC')
-
-    # prep sequences
-    class_names = ['person', 'people']
-
-    proc = SequentialProcessor()
-    proc.add(pr.UnpackDictionary(['image', 'boxes']))
-    proc.add(pr.ControlMap(pr.LoadImage(), [0], [0]))
-    proc.add(PreprocessImage((size, size)))
-    proc.add(PreprocessBoxes(len(class_names), prior_boxes, 0.5))
-    proc.add(pr.CastImage(float))
-    proc.add(pr.SequenceWrapper(
-        {0: {'image': [size, size, 3]}},
-        {1: {'boxes': [len(prior_boxes), 4 + len(class_names)]}}))
-
-    return proc
-"""
-
-
-def caltech(use_saved=True, train_subset=None, test_split=0.3, val_split=0.1, batch_size=16, discard_negatives=False):
+def load_data(use_saved, test_split, val_split, train_subset):
     """
-    Creates a processor that can be used to d_train a model on the caltech pedestrian dataset.
-    :param train_subset: How much of the training subset to use for the training dataset represented as a decimal if None, uses whole subset.
-    :param test_split: How much of the whole dataset will be used for testing.
-    :param val_split: How much of the training dataset will be used for validation.
-    :param use_saved: If True, uses saved splits instead of generating new ones.
-    :param batch_size: Input batch size.
-    :param discard_negatives: If true, images without objects are discarded.
-    :return: Train and d_test processors for the data.
+    Loads train/val/test splits
+    :param use_saved: If True, uses preexisting splits. Otherwise creates new ones.
+    :param test_split: Size of test split
+    :param val_split: Size of validation split
+    :param train_subset: Size of subset of training split that will be used (used to lower training time)
+    :return: Train, validation, and test splits as lists of dictionaries
     """
     if not exists("pickle/dataset.p"):
         data = prep_data()
@@ -158,9 +137,24 @@ def caltech(use_saved=True, train_subset=None, test_split=0.3, val_split=0.1, ba
     # get validation subset
     train_data, val_data = train_test_split(train_data, test_size=val_split)
 
+    return train_data, val_data, test_data
+
+
+def caltech(use_saved=True, train_subset=None, test_split=0.3, val_split=0.1, batch_size=16):
+    """
+    Creates a processor that can be used to d_train a model on the caltech pedestrian dataset.
+    :param train_subset: How much of the training subset to use for the training dataset represented as a decimal if None, uses whole subset.
+    :param test_split: How much of the whole dataset will be used for testing.
+    :param val_split: How much of the training dataset will be used for validation.
+    :param use_saved: If True, uses saved splits instead of generating new ones.
+    :param batch_size: Input batch size.
+    :return: Train and d_test processors for the data.
+    """
+    train_data, val_data, test_data = load_data(use_saved, test_split, val_split, train_subset)
+
     # create processor
     prior_boxes = create_prior_boxes('VOC')
-    processor = AugmentDetection(prior_boxes, split=pr.TEST, num_classes=2, size=300,
+    processor = AugmentDetection(prior_boxes, split=pr.TEST, num_classes=len(class_names), size=300,
                                  mean=None, IOU=.5,
                                  variances=[0.1, 0.1, 0.2, 0.2])
 
