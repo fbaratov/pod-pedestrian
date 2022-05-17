@@ -56,7 +56,7 @@ class Trainer:
         else: # create new model
             self.model = SSD300(num_classes=len(class_names), base_weights=None, head_weights=None)
 
-            optimizer = SGD(learning_rate=0.001,
+            optimizer = SGD(learning_rate=0.1,
                             momentum=0.9)
             loss = MultiBoxLoss()
             metrics = {'boxes': [loss.localization,
@@ -130,8 +130,8 @@ if __name__ == "__main__":
     # create trainer (used to train model/predict/evaluate as well as to create dataset splits)
     trainer = Trainer(saved_data,
                       saved_model,
-                      train_subset=0.1,
-                      test_split=0.01,
+                      train_subset=.5,
+                      test_split=0.3,
                       val_split=0.1,
                       batch_size=16
                       )
@@ -145,9 +145,10 @@ if __name__ == "__main__":
           ]
 
     # train model and plot loss
-    hist = trainer.train(callbacks=cb, epochs=10)
+    hist = trainer.train(callbacks=cb, epochs=3)
     if hist:
         plt.plot(hist.history["loss"])
+        plt.plot(hist.history["val_loss"])
         plt.show()
 
     # visualize all images that have bounding boxes
