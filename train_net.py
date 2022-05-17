@@ -1,21 +1,21 @@
 from random import sample
 
 from keras.callbacks import EarlyStopping
+from keras.optimizer_v2.gradient_descent import SGD
 from matplotlib import pyplot as plt
 from paz.backend.image import load_image
+from paz.optimization import MultiBoxLoss
 from paz.processors import ShowImage
 
 import pickle
-
 from keras.models import load_model
 from os.path import exists
 
+from keras.optimizer_v2.gradient_descent import SGD
 from paz.evaluation import evaluateMAP
 from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
-
 from prep_caltech import caltech
-
 class_labels = {
     "background": 0,
     "person": 1
@@ -55,7 +55,14 @@ class Trainer:
             self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
         else: # create new model
             self.model = SSD300(num_classes=len(class_names), base_weights=None, head_weights=None)
-            self.model.compile(optimizer="adam", loss="binary_crossentropy")
+
+            optimizer = SGD(learning_rate=0.001,
+                            momentum=0.9)
+            loss = MultiBoxLoss()
+            metrics = {'boxes': [loss.localization,
+                                 loss.positive_classification,
+                                 loss.negative_classification]}
+            self.model.compile(optimizer=optimizer, loss=loss.compute_loss)
 
     def get_splits(self, use_saved, train_subset, test_split, val_split, batch_size):
         """
@@ -124,7 +131,7 @@ if __name__ == "__main__":
     trainer = Trainer(saved_data,
                       saved_model,
                       train_subset=0.1,
-                      test_split=0.1,
+                      test_split=0.01,
                       val_split=0.1,
                       batch_size=16
                       )

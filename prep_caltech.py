@@ -62,6 +62,9 @@ def extract_box_caltech(file, width=640, height=480):
 
             box_data.append([x0, y0, x1, y1, label_int])
 
+    if not box_data:
+        box_data.append([0, 1, 0, 1, 0])
+
     return np.array(box_data)
 
 
@@ -93,8 +96,8 @@ def prep_data(discard_negatives=False):
                 # extract boxes
                 boxes = extract_box_caltech(annot_path)
 
-                if len(boxes) == 0:  # remove all frames with no boxes
-                    boxes.append(np.array([0, 1, 0, 1, 0]))
+                # if len(boxes) == 0:  # remove all frames with no boxes
+                #    boxes.append()
 
                 # append to full set
                 data.append({
