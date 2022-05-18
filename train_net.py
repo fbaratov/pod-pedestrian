@@ -28,20 +28,20 @@ class Trainer:
     Trains model to data.
     """
 
-    def __init__(self, saved_data=False, saved_model=False, train_subset=0.1, test_split=0.3, val_split=0.1,
+    def __init__(self, saved_data=False, saved_model=False, subset=0.1, test_split=0.3, val_split=0.1,
                  batch_size=16):
         """
         Initializes model and train/test splits.
         :param saved_data: If True, uses saved dataset splits instead of making new ones.
         :param saved_model: If True, uses saved model instead of training a new one.
-        :param train_subset: decimal representing which portion of a subset to use.
+        :param subset: How much of each split to use (used to lower number of images/training time
         :param batch_size: Batch size for training/val
         """
         self.d_train, self.d_val, self.d_test, self.model = None, None, None, None
 
         self.is_trained = saved_model and saved_data  # if new splits are generated, model needs retraining
         self.get_model(saved_model) # get preexisting model/create new one
-        self.get_splits(saved_data, train_subset, test_split, val_split, batch_size)
+        self.get_splits(saved_data, subset, test_split, val_split, batch_size)
 
     def get_model(self, use_saved):
         """
@@ -50,31 +50,36 @@ class Trainer:
         :return: SSD300 model
         """
 
+        optimizer = SGD(learning_rate=0.1,
+                        momentum=0.9)
+        loss = MultiBoxLoss()
+        metrics = {'boxes': [loss.localization,
+                             loss.positive_classification,
+                             loss.negative_classification]}
+
         if use_saved and exists("models/model"): # load previous model
-            self.model = load_model("models/model")
+            self.model = load_model("models/model",
+                                    custom_objects={'sgd': optimizer,
+                                                    'compute_loss': loss.compute_loss,
+                                                    'localization': loss.localization,
+                                                    'positive_classification': loss.positive_classification,
+                                                    'negative_classification': loss.negative_classification})
             self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
         else: # create new model
             self.model = SSD300(num_classes=len(class_names), base_weights=None, head_weights=None)
+            self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
 
-            optimizer = SGD(learning_rate=0.1,
-                            momentum=0.9)
-            loss = MultiBoxLoss()
-            metrics = {'boxes': [loss.localization,
-                                 loss.positive_classification,
-                                 loss.negative_classification]}
-            self.model.compile(optimizer=optimizer, loss=loss.compute_loss)
-
-    def get_splits(self, use_saved, train_subset, test_split, val_split, batch_size):
+    def get_splits(self, use_saved, subset, test_split, val_split, batch_size):
         """
         Gets d_train/d_test splits of the data.
-        :param train_subset: How much of the training subset to use.
+        :param subset: How much of each split to use.
         :param batch_size: Training/validation batch sizes
-        :param test_split: How much of dataset goes towards testing
-        :param val_split: How much of training dataset goes towards validation.
+        :param test_split: Size of test split
+        :param val_split: Size of validation split
         :param use_saved: If True, uses saved splits instead of making new ones.
         :return: Processors for train/test splits
         """
-        self.d_train, self.d_val, self.d_test = caltech(use_saved, train_subset, test_split, val_split, batch_size)
+        self.d_train, self.d_val, self.d_test = caltech(use_saved, subset, test_split, val_split, batch_size)
 
     def train(self, callbacks=None, epochs=10, force_train=False):
         """
@@ -108,7 +113,7 @@ class Trainer:
         :return: BBox prediction
         """
         image = load_image(img) if fp else img
-        detector = DetectSingleShot(self.model, class_names, .8, .8, draw=True)
+        detector = DetectSingleShot(self.model, class_names, .9, .9, draw=True)
         results = detector(image)
         return results
 
@@ -124,36 +129,37 @@ class Trainer:
 
 if __name__ == "__main__":
     # config parameters (used to skip creating dataset splits/training new model)
-    saved_data = False
-    saved_model = False
+    saved_data = True
+    saved_model = True
 
     # create trainer (used to train model/predict/evaluate as well as to create dataset splits)
     trainer = Trainer(saved_data,
                       saved_model,
-                      train_subset=.5,
-                      test_split=0.3,
-                      val_split=0.1,
-                      batch_size=16
+                      subset=.05,
+                      test_split=0.15,
+                      val_split=0.15,
+                      batch_size=24
                       )
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
-                        patience=1,
-                        min_delta=0.0005,
+                        patience=2,
+                        min_delta=0.01,
                         verbose=1,
                         restore_best_weights=True)
           ]
 
     # train model and plot loss
-    hist = trainer.train(callbacks=cb, epochs=3)
+    hist = trainer.train(callbacks=cb, epochs=5)
     if hist:
         plt.plot(hist.history["loss"])
         plt.plot(hist.history["val_loss"])
+        plt.legend()
         plt.show()
 
-    # visualize all images that have bounding boxes
     draw_boxes = ShowImage()
-    for i, d in enumerate(trainer.d_test):
+    # visualize all images that have bounding boxes
+    for i, d in enumerate(sample(trainer.d_test, k=1)):
         if not i % 500:
             print(f"{i}/{len(trainer.d_test)}")
         fp = d["image"]
@@ -161,7 +167,7 @@ if __name__ == "__main__":
         if not results["boxes2D"]:
             continue
 
-        #print(results["boxes2D"])
+        print(results["boxes2D"])
         draw_boxes(results["image"])
 
-    # print(trainer.evaluate())
+    print(trainer.evaluate())
