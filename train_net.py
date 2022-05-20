@@ -50,7 +50,7 @@ class Trainer:
         :return: SSD300 model
         """
 
-        optimizer = SGD(learning_rate=0.1,
+        optimizer = SGD(learning_rate=0.005,
                         momentum=0.9)
         loss = MultiBoxLoss()
         metrics = {'boxes': [loss.localization,
@@ -113,7 +113,7 @@ class Trainer:
         :return: BBox prediction
         """
         image = load_image(img) if fp else img
-        detector = DetectSingleShot(self.model, class_names, .9, .9, draw=True)
+        detector = DetectSingleShot(self.model, class_names, 0.01, 0.45, draw=True)
         results = detector(image)
         return results
 
@@ -129,37 +129,39 @@ class Trainer:
 
 if __name__ == "__main__":
     # config parameters (used to skip creating dataset splits/training new model)
-    saved_data = True
-    saved_model = True
+    saved_data = False
+    saved_model = False
 
     # create trainer (used to train model/predict/evaluate as well as to create dataset splits)
     trainer = Trainer(saved_data,
                       saved_model,
-                      subset=.05,
+                      subset=None,
                       test_split=0.15,
                       val_split=0.15,
-                      batch_size=24
+                      batch_size=16
                       )
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
-                        patience=2,
-                        min_delta=0.01,
+                        patience=5,
+                        min_delta=0.005,
                         verbose=1,
                         restore_best_weights=True)
           ]
 
     # train model and plot loss
-    hist = trainer.train(callbacks=cb, epochs=5)
+    hist = trainer.train(callbacks=cb, epochs=10)
     if hist:
         plt.plot(hist.history["loss"])
         plt.plot(hist.history["val_loss"])
         plt.legend()
         plt.show()
 
+    print(trainer.evaluate())
+
     draw_boxes = ShowImage()
     # visualize all images that have bounding boxes
-    for i, d in enumerate(sample(trainer.d_test, k=1)):
+    for i, d in enumerate(sample(trainer.d_test, k=100)):
         if not i % 500:
             print(f"{i}/{len(trainer.d_test)}")
         fp = d["image"]
@@ -169,5 +171,3 @@ if __name__ == "__main__":
 
         print(results["boxes2D"])
         draw_boxes(results["image"])
-
-    print(trainer.evaluate())
