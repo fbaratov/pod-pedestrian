@@ -1,7 +1,6 @@
 from random import sample
 
 from keras.callbacks import EarlyStopping
-from keras.optimizer_v2.gradient_descent import SGD
 from matplotlib import pyplot as plt
 from paz.backend.image import load_image
 from paz.optimization import MultiBoxLoss
@@ -16,9 +15,31 @@ from paz.evaluation import evaluateMAP
 from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
 from prep_caltech import caltech
+
+
+"""    "class1": 2,
+    "class2": 3,
+    "class4": 4,
+    "class5": 5,
+    "class6": 6,
+    "class7": 7,
+    "class8": 8,
+    "class9": 9,
+    "class10": 10,
+    "class11": 11,
+    "class12": 12,
+    "class13": 13,
+    "class14": 14,
+    "class15": 15,
+    "class16": 16,
+    "class17": 17,
+    "class18": 18,
+    "class19": 19,
+    "class20": 20,"""
+
 class_labels = {
     "background": 0,
-    "person": 1
+    "person": 1,
 }
 class_names = list(class_labels.keys())
 
@@ -50,8 +71,8 @@ class Trainer:
         :return: SSD300 model
         """
 
-        optimizer = SGD(learning_rate=0.005,
-                        momentum=0.9)
+        optimizer = SGD(learning_rate=0.001,
+                        momentum=0.5)
         loss = MultiBoxLoss()
         metrics = {'boxes': [loss.localization,
                              loss.positive_classification,
@@ -66,7 +87,7 @@ class Trainer:
                                                     'negative_classification': loss.negative_classification})
             self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
         else: # create new model
-            self.model = SSD300(num_classes=len(class_names), base_weights=None, head_weights=None)
+            self.model = SSD300(num_classes=len(class_names), base_weights='VGG', head_weights=None)
             self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
 
     def get_splits(self, use_saved, subset, test_split, val_split, batch_size):
@@ -113,7 +134,7 @@ class Trainer:
         :return: BBox prediction
         """
         image = load_image(img) if fp else img
-        detector = DetectSingleShot(self.model, class_names, 0.01, 0.45, draw=True)
+        detector = DetectSingleShot(self.model, class_names, 0.5, 0.5, draw=True)
         results = detector(image)
         return results
 
@@ -129,13 +150,13 @@ class Trainer:
 
 if __name__ == "__main__":
     # config parameters (used to skip creating dataset splits/training new model)
-    saved_data = False
-    saved_model = False
+    saved_data = True
+    saved_model = True
 
     # create trainer (used to train model/predict/evaluate as well as to create dataset splits)
     trainer = Trainer(saved_data,
                       saved_model,
-                      subset=None,
+                      subset=.5,
                       test_split=0.15,
                       val_split=0.15,
                       batch_size=16
@@ -151,13 +172,14 @@ if __name__ == "__main__":
 
     # train model and plot loss
     hist = trainer.train(callbacks=cb, epochs=10)
+
+    #print(trainer.evaluate())
+
     if hist:
         plt.plot(hist.history["loss"])
         plt.plot(hist.history["val_loss"])
         plt.legend()
         plt.show()
-
-    print(trainer.evaluate())
 
     draw_boxes = ShowImage()
     # visualize all images that have bounding boxes
@@ -165,6 +187,7 @@ if __name__ == "__main__":
         if not i % 500:
             print(f"{i}/{len(trainer.d_test)}")
         fp = d["image"]
+        print(d["boxes"])
         results = trainer.predict_model(fp)
         if not results["boxes2D"]:
             continue

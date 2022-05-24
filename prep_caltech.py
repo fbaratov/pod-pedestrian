@@ -12,9 +12,29 @@ from paz.abstract import ProcessingSequence, SequentialProcessor
 import paz.processors as pr
 from sklearn.model_selection import train_test_split
 
+"""    "class1": 2,
+    "class2": 3,
+    "class4": 4,
+    "class5": 5,
+    "class6": 6,
+    "class7": 7,
+    "class8": 8,
+    "class9": 9,
+    "class10": 10,
+    "class11": 11,
+    "class12": 12,
+    "class13": 13,
+    "class14": 14,
+    "class15": 15,
+    "class16": 16,
+    "class17": 17,
+    "class18": 18,
+    "class19": 19,
+    "class20": 20,"""
+
 class_labels = {
     "background": 0,
-    "person": 1
+    "person": 1,
 }
 class_names = list(class_labels.keys())
 
@@ -60,7 +80,7 @@ def extract_box_caltech(file, width=640, height=480):
                 # print(f"Invalid coords: {x0, y0, x1, y1, label}")
                 continue
 
-            box_data.append([x0, y0, x1, y1, label_int])
+            box_data.append([x0/width, y0/height, x1/width, y1/height, label_int])
 
     return np.array(box_data)
 
@@ -94,7 +114,7 @@ def prep_data(discard_negatives=False):
                 boxes = extract_box_caltech(annot_path)
 
                 if len(boxes) == 0:  # remove all frames with no boxes
-                   continue
+                    continue
 
                 # append to full set
                 data.append({
@@ -126,13 +146,12 @@ def load_data(use_saved, test_split, val_split, subset):
     else:
         data = pickle.load(open("pickle/dataset.p", "rb"))
         # split d_test/d_train
-        train_data, test_data = train_test_split(data, test_size=test_split+val_split)
+        train_data, test_data = train_test_split(data, test_size=test_split + val_split)
         pickle.dump(train_data, open("pickle/train.p", "wb"))
         pickle.dump(test_data, open("pickle/test.p", "wb"))
 
-
     # get validation subset
-    test_data, val_data = train_test_split(test_data, test_size=val_split/(val_split+test_split))
+    test_data, val_data = train_test_split(test_data, test_size=val_split / (val_split + test_split))
 
     # get train data subset
     if subset:
@@ -158,12 +177,11 @@ def caltech(use_saved=True, subset=None, test_split=0.3, val_split=0.1, batch_si
     # create processor
     prior_boxes = create_prior_boxes('VOC')
     train_processor = AugmentDetection(prior_boxes, split=pr.TRAIN, num_classes=len(class_names), size=300,
-                                 mean=None, IOU=.5,
-                                 variances=[0.1, 0.1, 0.2, 0.2])
+                                       mean=None, IOU=.5,
+                                       variances=[0.1, 0.1, 0.2, 0.2])
     val_processor = AugmentDetection(prior_boxes, split=pr.VAL, num_classes=len(class_names), size=300,
-                                 mean=None, IOU=.5,
-                                 variances=[0.1, 0.1, 0.2, 0.2])
-
+                                     mean=None, IOU=.5,
+                                     variances=[0.1, 0.1, 0.2, 0.2])
 
     # create and save sequences
     train_seq = ProcessingSequence(train_processor, batch_size, train_data)
