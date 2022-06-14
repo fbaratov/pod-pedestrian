@@ -1,20 +1,15 @@
-from keras.utils import plot_model as plot_model
-from paz.models import SSD300
-
-import pickle
 from ssd_dropout import SSD300_dropout
-from train_net import class_labels, class_names
-from train_net import Trainer
+from train_net import *
 
 
 def model_fn(prob=0.3):
     ssd = SSD300_dropout(num_classes=len(class_names), base_weights='VGG', head_weights=None, prob=prob)
-    #ssd = SSD300(num_classes=len(class_names), base_weights='VGG', head_weights=None)
+    # ssd = SSD300(num_classes=len(class_names), base_weights='VGG', head_weights=None)
     return ssd
 
 
 if __name__ == "__main__":
-    model = model_fn(0.3)
+    model = model_fn(0.5)
 
     """plot_model(
         model,
@@ -29,16 +24,14 @@ if __name__ == "__main__":
         show_layer_activations=False,
     )"""
 
-    trainer = Trainer(model_name=None,
-                      saved_data=False,
-                      subset=0.05,
-                      batch_size=8)
+    trainer = DropoutTrainer(model_name=None,
+                             saved_data=True,
+                             subset=0.05,
+                             batch_size=10)
 
-    trainer.init_model(model, "dropout_model")
+    trainer.init_model(model, "dropout_model_biggerbatch")
     trainer.train()
 
     model.prior_boxes = pickle.load(open('models/prior_boxes.p', 'rb'))
 
-    trainer.model = model
-
-    vals = trainer.show_results(k=100, show_truths=True)
+    trainer.show_results(k=100, show_truths=True, num_preds=50)
