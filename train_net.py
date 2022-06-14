@@ -1,40 +1,19 @@
 from random import sample
-
+from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
 from matplotlib import pyplot as plt
-from paz.backend.image import load_image
+from paz.backend.image import load_image, GREEN
 from paz.optimization import MultiBoxLoss
-from paz.processors import ShowImage
+from paz.processors import ShowImage, DenormalizeBoxes2D, DrawBoxes2D, ToBoxes2D
 
 import pickle
 from keras.models import load_model
 from os.path import exists, isdir
 
-from keras.optimizer_v2.gradient_descent import SGD
 from paz.evaluation import evaluateMAP
 from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
 from prep_caltech import caltech
-
-"""    "class1": 2,
-    "class2": 3,
-    "class4": 4,
-    "class5": 5,
-    "class6": 6,
-    "class7": 7,
-    "class8": 8,
-    "class9": 9,
-    "class10": 10,
-    "class11": 11,
-    "class12": 12,
-    "class13": 13,
-    "class14": 14,
-    "class15": 15,
-    "class16": 16,
-    "class17": 17,
-    "class18": 18,
-    "class19": 19,
-    "class20": 20,"""
 
 class_labels = {
     "background": 0,
@@ -61,12 +40,15 @@ class Trainer:
         self.model_name = model_name
 
         self.is_trained = saved_data  # if new splits are generated, model needs retraining
-        self.get_model()  # get preexisting model/create new one
+        if self.model_name is not None: # get preexisting model/create new one
+            self.init_model()
         self.get_splits(saved_data, subset, test_split, val_split, batch_size)
 
-    def get_model(self):
+    def init_model(self, model=None, model_name=None):
         """
         Creates and compiles a SSD300 model.
+        :param model: Uncompiled model for use with trainer
+        :param model_name: Model name (if providing a model)
         :return: SSD300 model
         """
 
@@ -77,8 +59,12 @@ class Trainer:
                              loss.positive_classification,
                              loss.negative_classification]}
 
-        if exists(f"models/{self.model_name}"):  # load previous model
-            self.model = load_model("models/model",
+        if model is not None: # use provided model
+            self.model = model
+            self.model_name = model_name
+            self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
+        elif exists(f"models/{self.model_name}"):  # load previous model
+            self.model = load_model(f"models/{self.model_name}",
                                     custom_objects={'sgd': optimizer,
                                                     'compute_loss': loss.compute_loss,
                                                     'localization': loss.localization,
@@ -117,16 +103,16 @@ class Trainer:
         if not self.is_trained or force_train:
             # generate model name if none provided or name taken
             if self.model_name is None or isdir(f"models/{self.model_name}"):
-                i = 0
-                while isdir(f"models/model{i}"):
+                i = 1
+                while isdir(f"models/{self.model_name}{i}"):
                     i += 1
-                self.model_name = f"model{i}"
+                self.model_name = f"{self.model_name}{i}"
 
             # fit model
             history = self.model.fit(self.d_train, callbacks=callbacks, epochs=epochs, validation_data=self.d_val)
 
             # save model params and mark as trained
-            self.model.save("models/model")
+            self.model.save(f"models/{self.model_name}")
             self.is_trained = True
             pickle.dump(self.model.prior_boxes, open(f"models/{self.model_name}/prior_boxes.p", "wb"))
             return history
@@ -145,7 +131,7 @@ class Trainer:
         :return: BBox prediction
         """
         image = load_image(img) if fp else img
-        detector = DetectSingleShot(self.model, class_names, threshold, nms, draw=True)
+        detector = DetectSingleShot(self.model, class_names, threshold, nms, draw=False)
         results = detector(image)
         return results
 
@@ -157,18 +143,20 @@ class Trainer:
         :return: Dict with results
         """
 
-        detector = DetectSingleShot(self.model, class_names, threshold, nms, draw=True)
-        results = evaluateMAP(detector, self.d_test, class_labels, iou_thresh=.3)
+        names = class_names
+        labels = class_labels
+        detector = DetectSingleShot(self.model, names, threshold, nms, draw=False)
+        results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.3)
         return results
 
-    def show_results(self, k=None):
+    def show_results(self, k=None, show_truths=False):
         """
         Makes predictions on random samples from the test dataset and displays them.
         :param k: Number of predictions to make
+        :param show_truths: If True, displays the correct annotations alongside the predictions.
         """
         if not k or k > len(self.d_test):
             k = len(self.d_test)
-        draw_boxes = ShowImage()
 
         # visualize all images that have bounding boxes
         for i, d in enumerate(sample(self.d_test, k=k)):
@@ -180,10 +168,26 @@ class Trainer:
             if not results["boxes2D"]:
                 continue
 
-            draw_boxes(results["image"])
+            show_image = ShowImage()
+            draw_pred = DrawBoxes2D(class_names)
+
+            if show_truths:
+                to_boxes2D = ToBoxes2D(class_names)
+                denormalize = DenormalizeBoxes2D()
+                boxes2D = to_boxes2D(d["boxes"])
+                image = results["image"]
+                boxes2D = denormalize(image, boxes2D)
+                draw_truths = DrawBoxes2D(class_names,  colors=[list(GREEN), list(GREEN)])
+                draw_img = draw_pred(image, results["boxes2D"])
+                draw_img = draw_truths(draw_img, boxes2D)
+                show_image(draw_img)
+            else:
+                image = results["image"]
+                draw_img = draw_pred(image, results["boxes2D"])
+                show_image(draw_img)
 
 
-def pipeline(saved_data=True, model_name="model", subset=1, epochs=10):
+def pipeline(saved_data=True, model_name="model", subset=1., epochs=10):
     """
     Takes care of training, evaluating, and displaying network results.
     :param saved_data: If False, generates new data splits, otherwise uses saved.
@@ -221,9 +225,8 @@ def pipeline(saved_data=True, model_name="model", subset=1, epochs=10):
         plt.show()
 
     # draw results
-    trainer.show_results(k=100)
+    trainer.show_results(k=100, show_truths=True)
 
 
 if __name__ == "__main__":
-
-    pipeline(saved_data=True, model_name="model", subset=1, epochs=10)
+    pipeline(saved_data=True, model_name="model", subset=, epochs=10)

@@ -12,26 +12,6 @@ from paz.abstract import ProcessingSequence, SequentialProcessor
 import paz.processors as pr
 from sklearn.model_selection import train_test_split
 
-"""    "class1": 2,
-    "class2": 3,
-    "class4": 4,
-    "class5": 5,
-    "class6": 6,
-    "class7": 7,
-    "class8": 8,
-    "class9": 9,
-    "class10": 10,
-    "class11": 11,
-    "class12": 12,
-    "class13": 13,
-    "class14": 14,
-    "class15": 15,
-    "class16": 16,
-    "class17": 17,
-    "class18": 18,
-    "class19": 19,
-    "class20": 20,"""
-
 class_labels = {
     "background": 0,
     "person": 1,
@@ -137,8 +117,8 @@ def load_data(use_saved, test_split, val_split, subset):
         data = prep_data()
         pickle.dump(data, open("pickle/dataset.p", "wb"))
         train_data, test_data = train_test_split(data, test_size=test_split)
-        pickle.dump(train_data, open("pickle/train.p", "wb"))
-        pickle.dump(test_data, open("pickle/test.p", "wb"))
+        #pickle.dump(train_data, open("pickle/train.p", "wb"))
+        #pickle.dump(test_data, open("pickle/test.p", "wb"))
 
     if use_saved and exists("pickle/train.p") and exists("pickle/test.p"):
         train_data = pickle.load(open("pickle/train.p", "rb"))
