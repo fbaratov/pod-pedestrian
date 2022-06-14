@@ -11,13 +11,8 @@ from os.path import exists, isdir
 from paz.evaluation import evaluateMAP
 from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
-from prep_caltech import caltech
-
-class_labels = {
-    "background": 0,
-    "person": 1,
-}
-class_names = list(class_labels.keys())
+from prep_dataset import caltech
+from generate_caltech_dict import class_labels, class_names
 
 
 class Trainer:

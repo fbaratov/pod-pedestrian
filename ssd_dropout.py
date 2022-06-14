@@ -35,6 +35,7 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
             the original base.
         trainable_base: Boolean. If `True` the base model
             weights are also trained.
+        prob: Float between 0 and 1. Probability of dropout.
 
     # Reference
         - [SSD: Single Shot MultiBox

@@ -4,12 +4,11 @@ from train_net import *
 
 def model_fn(prob=0.3):
     ssd = SSD300_dropout(num_classes=len(class_names), base_weights='VGG', head_weights=None, prob=prob)
-    # ssd = SSD300(num_classes=len(class_names), base_weights='VGG', head_weights=None)
     return ssd
 
 
 if __name__ == "__main__":
-    model = model_fn(0.5)
+    model = model_fn(0.3)
 
     """plot_model(
         model,
@@ -31,7 +30,5 @@ if __name__ == "__main__":
 
     trainer.init_model(model, "dropout_model_biggerbatch")
     trainer.train()
-
-    model.prior_boxes = pickle.load(open('models/prior_boxes.p', 'rb'))
 
     trainer.show_results(k=100, show_truths=True, num_preds=50)
