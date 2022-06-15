@@ -1,4 +1,9 @@
 from keras_uncertainty.layers import StochasticDropout
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Reshape
+from tensorflow.keras.layers import Concatenate
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import MaxPooling2D
@@ -6,13 +11,67 @@ from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.utils import get_file
+import tensorflow.keras.backend as K
 
 from paz.models.layers import Conv2DNormalization
-from paz.models.detection.utils import create_multibox_head
 from paz.models.detection.utils import create_prior_boxes
 
 WEIGHT_PATH = (
     'https://github.com/oarriaga/altamira-data/releases/download/v0.2/')
+
+
+def create_multibox_head(tensors, num_classes, num_priors, l2_loss=0.0005,
+                         num_regressions=4, l2_norm=False, batch_norm=False):
+    """Adds multibox head with classification and regression output tensors.
+
+    # Arguments
+        tensors: List of tensors.
+        num_classes: Int. Number of classes.
+        num_priors. List of integers. Length should equal to tensors length.
+            Each integer represents the amount of bounding boxes shapes in
+            each feature map value.
+        l2_loss: Float. L2 loss value to be added to convolutional layers.
+        num_regressions: Number of values to be regressed per prior box.
+            e.g. for 2D bounding boxes we regress 4 coordinates.
+        l2_norm: Boolean. If `True` l2 normalization layer is applied to
+            each before a convolutional layer.
+        batch_norm: Boolean. If `True` batch normalization is applied after
+            each convolutional layer.
+    """
+    classification_layers, regression_layers = [], []
+    for layer_arg, base_layer in enumerate(tensors):
+        if l2_norm:
+            base_layer = Conv2DNormalization(20)(base_layer)
+
+        # classification leaf -------------------------------------------------
+        num_kernels = num_priors[layer_arg] * num_classes
+        class_leaf = Conv2D(num_kernels, 3, padding='same',
+                            kernel_regularizer=l2(l2_loss))(base_layer)
+        if batch_norm:
+            class_leaf = BatchNormalization()(class_leaf)
+        class_leaf = Flatten()(class_leaf)
+        classification_layers.append(class_leaf)
+
+        # regression leaf -----------------------------------------------------
+        num_kernels = num_priors[layer_arg] * num_regressions
+        regress_leaf = Conv2D(num_kernels, 3, padding='same',
+                              kernel_regularizer=l2(l2_loss))(base_layer)
+        if batch_norm:
+            regress_leaf = BatchNormalization()(regress_leaf)
+
+        regress_leaf = Flatten()(regress_leaf)
+        regression_layers.append(regress_leaf)
+
+    classifications = Concatenate(axis=1)(classification_layers)
+    regressions = Concatenate(axis=1)(regression_layers)
+    num_boxes = K.int_shape(regressions)[-1] // num_regressions
+    classifications = Reshape((num_boxes, num_classes))(classifications)
+    classifications = Activation('softmax')(classifications)
+    regressions = Reshape((num_boxes, num_regressions))(regressions)
+    outputs = Concatenate(
+        axis=2, name='boxes')([regressions, classifications])
+    return outputs
+
 
 
 def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
@@ -180,7 +239,7 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
     conv7_2 = Conv2D(256, (3, 3), padding='valid', strides=(2, 2),
                      activation='relu', name='branch_4',
                      kernel_regularizer=l2(l2_loss))(conv7_1z)
-    # conv7_2 = StochasticDropout(prob)(conv7_2)
+    conv7_2 = StochasticDropout(prob)(conv7_2)
     # Block 8 -----------------------------------------------------------------
     conv8_1 = Conv2D(128, (1, 1), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss))(conv7_2)
@@ -188,7 +247,7 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
     conv8_2 = Conv2D(256, (3, 3), padding='valid', strides=(1, 1),
                      activation='relu', name='branch_5',
                      kernel_regularizer=l2(l2_loss))(conv8_1)
-    # conv8_2 = StochasticDropout(prob)(conv8_2)
+    conv8_2 = StochasticDropout(prob)(conv8_2)
     # Block 9 -----------------------------------------------------------------
     conv9_1 = Conv2D(128, (1, 1), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss))(conv8_2)
@@ -196,7 +255,7 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
     conv9_2 = Conv2D(256, (3, 3), padding='valid', strides=(1, 1),
                      activation='relu', name='branch_6',
                      kernel_regularizer=l2(l2_loss))(conv9_1)
-    #conv9_2 = StochasticDropout(prob)(conv9_2)
+    conv9_2 = StochasticDropout(prob)(conv9_2)
 
     branch_tensors = [conv4_3_norm, fc7, conv6_2, conv7_2, conv8_2, conv9_2]
     if return_base:

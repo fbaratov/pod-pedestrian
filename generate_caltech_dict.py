@@ -10,7 +10,8 @@ class_labels = {
 class_names = list(class_labels.keys())
 
 PICKLE_DIR = "pickle/"
-DATASET_DIR = "D:/.datasets/CALTECH_PEDESTRIAN/unpacked"
+DATASET_DIR = "C:/Users/Farrukh/Documents/.data/CALTECH_PEDESTRIAN"
+
 
 def extract_box_caltech(file, width=640, height=480):
     """

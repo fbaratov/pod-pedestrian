@@ -23,12 +23,30 @@ if __name__ == "__main__":
         show_layer_activations=False,
     )"""
 
-    trainer = DropoutTrainer(model_name=None,
-                             saved_data=True,
-                             subset=0.05,
-                             batch_size=10)
+    trainer = DropoutTrainer(saved_data=True,
+                             model_name=None,
+                             subset=1,
+                             test_split=0.15,
+                             val_split=0.15,
+                             batch_size=8
+                             )
+    trainer.init_model(model, "model_newloc_test")
 
-    trainer.init_model(model, "dropout_model_biggerbatch")
-    trainer.train()
+    # callbacks (passed to trainer.train)
+    cb = [EarlyStopping(monitor='val_loss',
+                        patience=5,
+                        min_delta=0.005,
+                        verbose=1,
+                        restore_best_weights=True)
+          ]
 
-    trainer.show_results(k=100, show_truths=True, num_preds=50)
+    # train model and plot loss
+    hist = trainer.train(callbacks=cb, epochs=10)
+
+    if hist:
+        plt.plot(hist.history["loss"])
+        plt.plot(hist.history["val_loss"])
+        plt.legend()
+        plt.show()
+
+    trainer.show_results(k=100, show_truths=True, num_preds=10)

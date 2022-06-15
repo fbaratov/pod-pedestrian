@@ -32,6 +32,12 @@ def pipeline(saved_data=True, model_name="model", subset=1., epochs=10):
     # train model and plot loss
     hist = trainer.train(callbacks=cb, epochs=epochs)
 
+    if hist:
+        plt.plot(hist.history["loss"])
+        plt.plot(hist.history["val_loss"])
+        plt.legend()
+        plt.show()
+
     print(trainer.evaluate())
 
     if hist:
@@ -45,4 +51,4 @@ def pipeline(saved_data=True, model_name="model", subset=1., epochs=10):
 
 
 if __name__ == "__main__":
-    pipeline(saved_data=True, model_name="model", subset=.05, epochs=10)
+    pipeline(saved_data=True, model_name="model", subset=.05, epochs=5)
