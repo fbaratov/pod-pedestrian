@@ -5,7 +5,7 @@ from trainer import DropoutTrainer
 
 
 def test_dropout():
-    split_name = "full-set"
+    split_name = "full_set"
     model_name = "model_dropout_bigboi"
 
     trainer = DropoutTrainer(model=model_name,
