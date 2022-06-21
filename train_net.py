@@ -5,7 +5,7 @@ from prep_dataset import retrieve_splits
 from trainer import *
 
 
-def pipeline(epochs=10):
+def train_net(epochs=10):
     """
     Takes care of training, evaluating, and displaying network results.
     :param epochs: Number of epochs to train for.
@@ -26,14 +26,11 @@ def pipeline(epochs=10):
     # train model and plot loss
     hist = trainer.train(callbacks=cb, epochs=epochs)
 
-    if hist:
-        plt.plot(hist.history["loss"])
-        plt.plot(hist.history["val_loss"])
-        plt.legend()
-        plt.show()
-
-    print(trainer.evaluate())
+    plt.plot(hist.history["loss"])
+    plt.plot(hist.history["val_loss"])
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
-    pipeline(epochs=5)
+    train_net(epochs=5)
