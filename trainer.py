@@ -146,20 +146,21 @@ class Trainer:
             show_image = ShowImage()
             draw_pred = DrawBoxes2D(class_names)
 
+            image = results["image"]
+            draw_img = draw_pred(image, [])
+
+            # draw boxes
+            draw_img = draw_pred(draw_img, results["boxes2D"])
+
+            # draw truths if requested
             if show_truths:
                 to_boxes2D = ToBoxes2D(class_names)
                 denormalize = DenormalizeBoxes2D()
                 boxes2D = to_boxes2D(d["boxes"])
-                image = results["image"]
                 boxes2D = denormalize(image, boxes2D)
                 draw_truths = DrawBoxes2D(class_names, colors=[list(GREEN), list(GREEN)])
-                draw_img = draw_pred(image, results["boxes2D"])
                 draw_img = draw_truths(draw_img, boxes2D)
-                show_image(draw_img)
-            else:
-                image = results["image"]
-                draw_img = draw_pred(image, results["boxes2D"])
-                show_image(draw_img)
+            show_image(draw_img)
 
 
 class DropoutTrainer(Trainer):
@@ -186,10 +187,11 @@ class DropoutTrainer(Trainer):
         :param k: Number of predictions to make
         :param show_truths: If True, displays the correct annotations alongside the predictions.
         """
+        # limit number of predictions to be between 0 and the length of the test set
         if not k or k > len(self.d_test):
             k = len(self.d_test)
 
-        # visualize all images that have bounding boxes
+        # visualize all images
         for i, d in enumerate(sample(self.d_test, k=k)):
             if not i % int(k / 20):
                 print(f"{i}/{k}")
@@ -197,7 +199,7 @@ class DropoutTrainer(Trainer):
 
             results = self.predict_model(fp, threshold=score_thresh, nms=nms)
             show_image = ShowImage()
-            draw_mean = DrawBoxes2D(class_names, colors=[[0, 255, 255]] * 2)
+            draw_mean = DrawBoxes2D(class_names)
 
             image = results["image"]
             draw_img = draw_mean(image, [])
