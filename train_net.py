@@ -1,8 +1,14 @@
 from keras.callbacks import EarlyStopping
 from matplotlib import pyplot as plt
+from paz.models import SSD300
 
 from prep_dataset import retrieve_splits
 from trainer import *
+
+
+def model_fn():
+    ssd = SSD300(num_classes=len(class_names), base_weights='VGG', head_weights=None)
+    return ssd
 
 
 def train_net(epochs=10):
@@ -13,7 +19,8 @@ def train_net(epochs=10):
 
     # create trainer (used to train model/predict/evaluate as well as to create dataset splits)
     split_names = "full_set"
-    trainer = Trainer(splits=retrieve_splits(split_names))
+    trainer = Trainer(splits=retrieve_splits(split_names),
+                      model=model_fn())
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',

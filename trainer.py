@@ -1,6 +1,7 @@
 from random import sample
 from keras.optimizers import SGD
 from paz.backend.image import load_image, GREEN
+from paz.models.detection.utils import create_prior_boxes
 from paz.optimization import MultiBoxLoss
 from paz.processors import ShowImage, DenormalizeBoxes2D, DrawBoxes2D, ToBoxes2D
 
@@ -29,7 +30,7 @@ class Trainer:
         self.model = None
         self.model_name = None
 
-        if self.model_name is not None:  # get preexisting model/create new one
+        if model is not None:  # get preexisting model/create new one
             self.init_model(model)
 
     def init_model(self, model=None, model_name=None):
@@ -56,13 +57,14 @@ class Trainer:
                                                     'localization': loss.localization,
                                                     'positive_classification': loss.positive_classification,
                                                     'negative_classification': loss.negative_classification})
-            self.model.prior_boxes = pickle.load(open(f"models/{self.model_name}/prior_boxes.p", "rb"))
+            self.model.prior_boxes = pickle.load(open(f"models/{model}/prior_boxes.p", "rb"))
             self.model_name = model_name if model_name else model
         elif type(model) is not str and model is not None:  # use provided model
             print("=== USING PROVIDED MODEL")
             self.model = model
             self.model_name = model_name
             self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
+            self.model.prior_boxes = create_prior_boxes()
         else:
             if type(model) is str:
                 raise FileNotFoundError("model must be a valid path!")

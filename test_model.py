@@ -14,7 +14,10 @@ def test_dropout():
     # convert model to two-headed model
     model = trainer.model
     trainer.init_model(Model(model.input, [model.layers[-3].output, model.layers[-2].output]))
-    trainer.is_trained = True
 
     # generate predictions
     trainer.show_results(k=100, show_truths=True, score_thresh=.1, nms=.4)
+
+
+if __name__ == "__main__":
+    test_dropout()
