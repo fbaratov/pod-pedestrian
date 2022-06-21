@@ -40,15 +40,9 @@ def pipeline(saved_data=True, model_name="model", subset=1., epochs=10):
 
     print(trainer.evaluate())
 
-    if hist:
-        plt.plot(hist.history["loss"])
-        plt.plot(hist.history["val_loss"])
-        plt.legend()
-        plt.show()
-
     # draw results
     trainer.show_results(k=100, show_truths=True)
 
 
 if __name__ == "__main__":
-    pipeline(saved_data=True, model_name="model", subset=.05, epochs=5)
+    pipeline(saved_data=True, model_name="model_backup", subset=.05, epochs=5)

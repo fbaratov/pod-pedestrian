@@ -13,6 +13,7 @@ from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
 from prep_dataset import caltech
 from generate_caltech_dict import class_labels, class_names
+from dropout_detect import DetectSingleShotDropout
 
 
 class Trainer:
@@ -66,6 +67,7 @@ class Trainer:
             self.model = model
             self.model_name = model_name
             self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
+            self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
             self.is_trained = False
         else:  # create new model
             print("=== NO MODEL PROVIDED, INITIALIZING UNTRAINED SSD300")
@@ -146,9 +148,11 @@ class Trainer:
         results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.3)
         return results
 
-    def show_results(self, k=None, show_truths=False):
+    def show_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5):
         """
         Makes predictions on random samples from the test dataset and displays them.
+        :param nms:
+        :param score_thresh:
         :param k: Number of predictions to make
         :param show_truths: If True, displays the correct annotations alongside the predictions.
         """
@@ -161,9 +165,9 @@ class Trainer:
                 print(f"{i}/{k}")
             fp = d["image"]
 
-            results = self.predict_model(fp)
-            if not results["boxes2D"]:
-                continue
+            results = self.predict_model(fp, threshold=score_thresh, nms=nms)
+
+
 
             show_image = ShowImage()
             draw_pred = DrawBoxes2D(class_names)
@@ -186,9 +190,25 @@ class Trainer:
 
 class DropoutTrainer(Trainer):
 
-    def show_results(self, k=None, show_truths=False, num_preds=10):
+    def predict_model(self, img, fp=True, threshold=0.5, nms=0.5):
+        """
+        Uses model to make a prediction with the given image.
+        :param nms: NMS threshold
+        :param threshold: IoU threshold
+        :param img: Image or image filepath
+        :param fp: Set to True if img is a filepath, otherwise False.
+        :return: BBox prediction
+        """
+        image = load_image(img) if fp else img
+        detector = DetectSingleShotDropout(self.model, class_names, threshold, nms, draw=False)
+        results = detector(image)
+        return results
+
+    def show_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5):
         """
         Makes predictions on random samples from the test dataset and displays them.
+        :param nms:
+        :param score_thresh:
         :param k: Number of predictions to make
         :param show_truths: If True, displays the correct annotations alongside the predictions.
         """
@@ -197,31 +217,26 @@ class DropoutTrainer(Trainer):
 
         # visualize all images that have bounding boxes
         for i, d in enumerate(sample(self.d_test, k=k)):
-            print(f"{i}/{k}")
+            if not i % int(k / 20):
+                print(f"{i}/{k}")
             fp = d["image"]
 
-            results = {"image": None,
-                       "boxes2D": []}
-            for _ in range(num_preds):
-                res = self.predict_model(fp)
-                if results["image"] is None:
-                    results["image"] = res["image"]
-                results["boxes2D"] += res["boxes2D"]
-
+            results = self.predict_model(fp, threshold=score_thresh, nms=nms)
             show_image = ShowImage()
-            draw_pred = DrawBoxes2D(class_names)
+            draw_mean = DrawBoxes2D(class_names, colors=[[0, 255, 255]] * 2)
 
+            image = results["image"]
+            draw_img = draw_mean(image, [])
+
+            # draw boxes
+            draw_img = draw_mean(draw_img, results["boxes2D"])
+
+            # draw truths if requested
             if show_truths:
                 to_boxes2D = ToBoxes2D(class_names)
                 denormalize = DenormalizeBoxes2D()
                 boxes2D = to_boxes2D(d["boxes"])
-                image = results["image"]
                 boxes2D = denormalize(image, boxes2D)
                 draw_truths = DrawBoxes2D(class_names, colors=[list(GREEN), list(GREEN)])
-                draw_img = draw_pred(image, results["boxes2D"])
                 draw_img = draw_truths(draw_img, boxes2D)
-                show_image(draw_img)
-            else:
-                image = results["image"]
-                draw_img = draw_pred(image, results["boxes2D"])
-                show_image(draw_img)
+            show_image(draw_img)
