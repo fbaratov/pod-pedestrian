@@ -1,4 +1,5 @@
 from keras import Model
+from paz.evaluation import evaluateMAP
 
 from prep_dataset import retrieve_splits
 from trainer import DropoutTrainer

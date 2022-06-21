@@ -1,9 +1,12 @@
 import numpy as np
 from paz.abstract import SequentialProcessor, Processor
 import paz.processors as pr
+from paz.pipelines import DetectSingleShot
+
+from generate_caltech_dict import class_names, class_labels
 
 
-class DetectSingleShotDropout(Processor):
+class DetectSingleShotDropout(DetectSingleShot):
     """Single-shot object detection prediction.
 
     # Arguments
@@ -18,57 +21,44 @@ class DetectSingleShotDropout(Processor):
     def __init__(self, model, class_names, score_thresh, nms_thresh,
                  mean=pr.BGR_IMAGENET_MEAN, variances=[0.1, 0.1, 0.2, 0.2],
                  draw=True):
-        self.model = model
-        self.class_names = class_names
-        self.score_thresh = score_thresh
-        self.nms_thresh = nms_thresh
-        self.variances = variances
-        self.draw = draw
 
-        super(DetectSingleShotDropout, self).__init__()
-        preprocessing = SequentialProcessor(
-            [pr.ResizeImage(self.model.input_shape[1:3]),
-             pr.ConvertColorSpace(pr.RGB2BGR),
-             pr.SubtractMeanImage(mean),
-             pr.CastImage(float),
-             pr.ExpandDims(axis=0)])
+        super(DetectSingleShotDropout, self).__init__(model, class_names, score_thresh, nms_thresh,
+                                                      mean, variances, draw)
 
-        self.postprocessing = SequentialProcessor(
-            [pr.Squeeze(axis=None),
-             pr.DecodeBoxes(self.model.prior_boxes, self.variances),
-             pr.NonMaximumSuppressionPerClass(self.nms_thresh),
-             pr.FilterBoxes(self.class_names, self.score_thresh)])
-
-        self.predict = pr.Predict(self.model, preprocessing, postprocess=None)
-
-        self.denormalize = pr.DenormalizeBoxes2D()
-        self.draw_boxes2D = pr.DrawBoxes2D(self.class_names)
+        self.postprocessing = self.predict.postprocess
+        self.predict.postprocess = None
         self.wrap = pr.WrapOutput(['image', 'boxes2D', 'std'])
 
     def call(self, image, k=100):
-        # make predictions
-        regr = []
-        classify = []
+        # make predictions and concatenate
+        regr = np.empty((0, 8732, 4))
+        classify = np.empty((0, 8732, len(class_names)))
+
         for _ in range(k):
+            # get regression and classification from prediction
             pred = self.predict(image)
-            regr.append(pred[0])
-            classify.append(pred[1])
+            pred_regr = pred[0]
+            pred_classify = pred[1]
+
+            # concatenate regression/classification predictions to arrays
+            regr = np.concatenate([regr, pred_regr], axis=0)
+            classify = np.concatenate([classify, pred_classify], axis=0)
 
         # calculate regression mean
         regr_mean = np.mean(regr, axis=0)
+        print(regr.shape, "=>", regr_mean.shape)
 
         # calculate regression variance
-        regr_var = 0
-        for i in regr:
-            regr_var += np.add(np.var(i, axis=0), np.power(i, 2))
-        regr_var /= len(regr)
-        regr_var -= np.power(regr_mean, 2)
+        regr_std = np.std(regr, axis=0)
+        print(regr.shape, "=>", regr_std.shape)
 
         # get classification mean
         classify_mean = np.mean(classify, axis=0)
+        print(classify.shape, "=>", classify_mean.shape)
 
         # concatenate and postprocess
-        bbox_mean = np.concatenate([regr_mean, classify_mean], axis=2)
+        bbox_mean = np.concatenate([regr_mean, classify_mean], axis=1)
+        print(bbox_mean.shape)
         boxes2D_normalized = self.postprocessing(bbox_mean)
 
         # denormalize boxes and add to list
@@ -76,16 +66,18 @@ class DetectSingleShotDropout(Processor):
         for box in boxes2D_normalized:
             try:
                 denorm_box = self.denormalize(image, [box])
-                # filter all
+
+                # consider only boxes with valid coordinates
                 for db in denorm_box:
                     x0, y0, x1, y1 = db.coordinates
                     if (0 <= x0 <= image.shape[0] and 0 <= y0 <= image.shape[1] and
-                        0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):  # remove all negative coordinates
+                            0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):
                         boxes2D.append(db)
             except ValueError as e:
                 boxes2D_normalized.remove(box)
                 print("Failure to normalize mean box:", box)
 
-        if self.draw:
+        if self.draw: # draw boxes if requested
             image = self.draw_boxes2D(image, boxes2D)
-        return self.wrap(image, boxes2D, regr_var)
+
+        return self.wrap(image, boxes2D, regr_std)
