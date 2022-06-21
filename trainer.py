@@ -9,9 +9,7 @@ from keras.models import load_model
 from os.path import exists, isdir
 
 from paz.evaluation import evaluateMAP
-from paz.models.detection.ssd300 import SSD300
 from paz.pipelines.detection import DetectSingleShot
-from prep_dataset import caltech
 from generate_caltech_dict import class_labels, class_names
 from dropout_detect import DetectSingleShotDropout
 
@@ -21,104 +19,82 @@ class Trainer:
     Trains model to data.
     """
 
-    def __init__(self, saved_data=True, model_name=None, subset=0.1, test_split=0.3, val_split=0.1,
-                 batch_size=16):
+    def __init__(self, splits, model=None):
         """
         Initializes model and train/test splits.
-        :param saved_data: If True, uses saved dataset splits instead of making new ones.
-        :param model_name: Save name of model. Existing name if using saved model, otherwise None or custom name.
-        :param subset: How much of each split to use (used to lower number of images/training time
-        :param batch_size: Batch size for training/val
+        :param model: Model (keras model) or model name (str).
         """
-        self.d_train, self.d_val, self.d_test, self.model = None, None, None, None
-        self.model_name = model_name
+        self.d_train, self.d_val, self.d_test = splits
 
-        self.is_trained = saved_data  # if new splits are generated, model needs retraining
+        self.model = None
+        self.model_name = None
+
         if self.model_name is not None:  # get preexisting model/create new one
-            self.init_model()
-        self.get_splits(saved_data, subset, test_split, val_split, batch_size)
+            self.init_model(model)
 
     def init_model(self, model=None, model_name=None):
         """
         Creates and compiles a SSD300 model.
-        :param model: Uncompiled model for use with trainer
-        :param model_name: Model name (if providing a model)
+        :param model: Model name (located in models dir) or a model to be used with trainer.
+        :param model_name: Optional name to give model.
         :return: SSD300 model
         """
 
         optimizer = SGD(learning_rate=0.001,
                         momentum=0.5)
+
         loss = MultiBoxLoss()
         metrics = {'boxes': [loss.localization,
                              loss.positive_classification,
                              loss.negative_classification]}
-        if exists(f"models/{model_name}"):  # load previous model
+
+        if type(model) is str and exists(f"models/{model}"):  # load previous model
             print("=== LOADING PREVIOUS MODEL")
-            self.model = load_model(f"models/{model_name}",
+            self.model = load_model(f"models/{model}",
                                     custom_objects={'sgd': optimizer,
                                                     'compute_loss': loss.compute_loss,
                                                     'localization': loss.localization,
                                                     'positive_classification': loss.positive_classification,
                                                     'negative_classification': loss.negative_classification})
-            self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
-            self.is_trained = True
-        elif model is not None:  # use provided model
+            self.model.prior_boxes = pickle.load(open(f"models/{self.model_name}/prior_boxes.p", "rb"))
+            self.model_name = model_name if model_name else model
+        elif type(model) is not str and model is not None:  # use provided model
             print("=== USING PROVIDED MODEL")
             self.model = model
             self.model_name = model_name
             self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
-            self.model.prior_boxes = pickle.load(open("models/prior_boxes.p", "rb"))
-            self.is_trained = False
-        else:  # create new model
-            print("=== NO MODEL PROVIDED, INITIALIZING UNTRAINED SSD300")
-            self.model = SSD300(num_classes=len(class_names), base_weights='VGG', head_weights=None)
-            self.model.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
+        else:
+            if type(model) is str:
+                raise FileNotFoundError("model must be a valid path!")
+            else:
+                raise TypeError("model argument must be a valid model name or a valid keras model!")
 
-    def get_splits(self, use_saved, subset, test_split, val_split, batch_size):
-        """
-        Gets d_train/d_test splits of the data.
-        :param subset: How much of each split to use.
-        :param batch_size: Training/validation batch sizes
-        :param test_split: Size of test split
-        :param val_split: Size of validation split
-        :param use_saved: If True, uses saved splits instead of making new ones.
-        :return: Processors for train/test splits
-        """
-        self.d_train, self.d_val, self.d_test = caltech(use_saved, subset, test_split, val_split, batch_size)
-
-    def train(self, callbacks=None, epochs=10, force_train=False):
+    def train(self, callbacks=None, epochs=10):
         """
         Trains model on given data or retrieves trained model.
         callbacks: List of callbacks to use
         epochs: Number of epochs to train for
-        force_train: If True, trains even if model is already trained.
         """
 
         # check for callbacks
         if callbacks is None:
             callbacks = []
 
-        # fit the model to test data
-        if not self.is_trained or force_train:
-            # generate model name if none provided or name taken
-            if self.model_name is None or isdir(f"models/{self.model_name}"):
-                i = 1
-                while isdir(f"models/{self.model_name}{i}"):
-                    i += 1
-                self.model_name = f"{self.model_name}{i}"
+        # give model a name if none is set yet
+        if self.model_name is None or isdir(f"models/{self.model_name}"):
+            i = 0
+            while isdir(f"models/{self.model_name}{i}"):
+                i += 1
+            self.model_name = f"{self.model_name}{i}"
 
-            # fit model
-            history = self.model.fit(self.d_train, callbacks=callbacks, epochs=epochs, validation_data=self.d_val)
+        # fit model
+        history = self.model.fit(self.d_train, callbacks=callbacks, epochs=epochs, validation_data=self.d_val)
 
-            # save model params and mark as trained
-            self.model.save(f"models/{self.model_name}")
-            self.is_trained = True
-            pickle.dump(self.model.prior_boxes, open(f"models/{self.model_name}/prior_boxes.p", "wb"))
-            return history
-        else:
-            print("Model is already trained!")
+        # save model params and mark as trained
+        self.model.save(f"models/{self.model_name}")
+        pickle.dump(self.model.prior_boxes, open(f"models/{self.model_name}/prior_boxes.p", "wb"))
 
-            return None
+        return history
 
     def predict_model(self, img, fp=True, threshold=0.5, nms=0.5):
         """
@@ -166,8 +142,6 @@ class Trainer:
             fp = d["image"]
 
             results = self.predict_model(fp, threshold=score_thresh, nms=nms)
-
-
 
             show_image = ShowImage()
             draw_pred = DrawBoxes2D(class_names)

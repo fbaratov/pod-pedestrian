@@ -1,6 +1,6 @@
-from keras import Model
 from keras.utils import plot_model
 
+from prep_dataset import retrieve_splits
 from ssd_dropout import SSD300_dropout
 from train_net import *
 
@@ -10,19 +10,15 @@ def model_fn(prob=0.3):
     return ssd
 
 
-if __name__ == "__main__":
+def train_dropout():
+    split_name = "full_set"
+
+    # create new dropout model
     model = model_fn(0.3)
 
-    trainer = DropoutTrainer(saved_data=True,
-                             model_name=None,
-                             subset=1,
-                             test_split=0.15,
-                             val_split=0.15,
-                             batch_size=8
-                             )
-    trainer.init_model(model, "model_dropout_bigboi")
-
-    model = trainer.model
+    # initialize trainer
+    trainer = DropoutTrainer(splits=retrieve_splits(split_name),
+                             model=model)
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
@@ -35,14 +31,10 @@ if __name__ == "__main__":
     # train model and plot loss
     hist = trainer.train(callbacks=cb, epochs=10)
 
-    # convert model to two-headed model
-    trainer.init_model(Model(model.input, [model.layers[-3].output, model.layers[-2].output]))
-
-    trainer.is_trained = True
-
+    # plot model structure for review
     plot_model(
         trainer.model,
-        to_file="circumcised_model.png",
+        to_file=f"{trainer.model_name}.png",
         show_shapes=False,
         show_dtype=False,
         show_layer_names=True,
@@ -53,10 +45,11 @@ if __name__ == "__main__":
         show_layer_activations=False,
     )
 
-    if hist:
-        plt.plot(hist.history["loss"])
-        plt.plot(hist.history["val_loss"])
-        plt.legend()
-        plt.show()
+    plt.plot(hist.history["loss"])
+    plt.plot(hist.history["val_loss"])
+    plt.legend()
+    plt.show()
 
-    trainer.show_results(k=100, show_truths=True, score_thresh=.1, nms=.4)
+
+if __name__ == "__main__":
+    train_dropout()

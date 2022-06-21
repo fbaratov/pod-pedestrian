@@ -1,0 +1,20 @@
+from keras import Model
+
+from prep_dataset import retrieve_splits
+from trainer import DropoutTrainer
+
+
+def test_dropout():
+    split_name = "full-set"
+    model_name = "model_dropout_bigboi"
+
+    trainer = DropoutTrainer(model=model_name,
+                             splits=retrieve_splits(split_name))
+
+    # convert model to two-headed model
+    model = trainer.model
+    trainer.init_model(Model(model.input, [model.layers[-3].output, model.layers[-2].output]))
+    trainer.is_trained = True
+
+    # generate predictions
+    trainer.show_results(k=100, show_truths=True, score_thresh=.1, nms=.4)

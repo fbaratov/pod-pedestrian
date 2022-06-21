@@ -53,21 +53,17 @@ class DetectSingleShotDropout(Processor):
             regr.append(pred[0])
             classify.append(pred[1])
 
-        # calculate mean/std
-        regr_mean = np.mean(regr, axis=0)  # mean
+        # calculate mean
+        regr_mean = np.mean(regr, axis=0)
 
+        # calculate variance
         regr_var = 0
         for i in regr:
-            regr_var += np.add(np.var(i, axis=0), np.power(i, 2))
+            regr_var += np.add(np.var(i, axis=0), np.power(np.mean(i), 2))
         regr_var /= len(regr)
         regr_var -= np.power(regr_mean, 2)
 
-
         classify_mean = np.mean(classify, axis=0)
-
-        # calculate shit one std away
-        regr_add = np.add(regr_mean, regr_var)
-        regr_sub = np.subtract(regr_mean, regr_var)
 
         # concatenate and postprocess
 
