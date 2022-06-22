@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 from paz.abstract import SequentialProcessor
 import paz.processors as pr
@@ -33,12 +35,16 @@ class DetectSingleShotDropout(DetectSingleShot):
         filter_boxes = pr.FilterBoxes(self.class_names, self.score_thresh)
 
         self.postprocessing = SequentialProcessor([  # input: means before postproc, stds before postproc
-            pr.ControlMap(decode, intro_indices=[0], outro_indices=[0]), # get mean boxes, save indices
-            pr.ControlMap(decode, intro_indices=[1], outro_indices=[1]), # decode std
+            pr.ControlMap(decode, intro_indices=[0], outro_indices=[0]),  # decode, save encoded
+            pr.ControlMap(decode, intro_indices=[1], outro_indices=[1]),  # decode std
+
+            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}),  # get std boxes
+
             pr.ControlMap(NMSPerClassDropout(self.nms_thresh), intro_indices=[0, 1], outro_indices=[0, 1]),
-            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}), # get std boxes
-            pr.ControlMap(filter_boxes, intro_indices=[0], outro_indices=[0]), # filter means
-            pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]), # filter stds
+
+            # pr.ControlMap(NonMaximumSuppressionPerClass(2), intro_indices=[1], outro_indices=[1]), # format correctly
+            pr.ControlMap(filter_boxes, intro_indices=[0], outro_indices=[0]),  # filter means
+            pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]),  # filter stds
         ])
 
         self.predict.postprocess = None
@@ -72,15 +78,13 @@ class DetectSingleShotDropout(DetectSingleShot):
         # postprocess
         # bbox_means_norm, selected_indices = self.postprocessing_mean(means)
         bbox_means_norm, bbox_stds_norm = self.postprocessing(means, stds)
-
+        print(len(bbox_means_norm), len(bbox_stds_norm))
         # denormalize boxes and add to list
         box_means = []
         box_stds = []
         for m, std in zip(bbox_means_norm, bbox_stds_norm):
             try:
-                mean_denorm = self.denormalize(image, [m])[0]
-                std_denorm = self.denormalize(image, [std])[0]
-
+                mean_denorm, std_denorm = self.denormalize(image, [m, std])
                 # consider only boxes with valid coordinates
                 # for db in denorm_box:
                 # x0, y0, x1, y1 = db.coordinates
@@ -88,7 +92,6 @@ class DetectSingleShotDropout(DetectSingleShot):
                 #        0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):
                 box_means.append(mean_denorm)
                 box_stds.append(std_denorm)
-                print(mean_denorm, std_denorm)
             except ValueError as e:
                 print("Failure to normalize mean-std combo:", m, std)
 

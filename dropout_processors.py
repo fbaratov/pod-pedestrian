@@ -16,7 +16,7 @@ def nms_per_class_dropout(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01,
     Returns
         Numpy array of shape `(num_classes, top_k, 5)` and list of selected indices.
     """
-    decoded_boxes, class_predictions = mean_data[:, :4], mean_data[:, 4:]
+    decoded_means, class_predictions = mean_data[:, :4], mean_data[:, 4:]
     decoded_stds = std_data[:, :4]
 
     num_classes = class_predictions.shape[1]
@@ -34,23 +34,27 @@ def nms_per_class_dropout(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01,
         if len(scores) == 0:
             continue
 
-        # select boxes
-        means = decoded_boxes[conf_mask]
+        # apply confidence mask
+        means = decoded_means[conf_mask]
+        stds = decoded_stds[conf_mask]
+
+        # apply nms based on means
         indices, count = apply_non_max_suppression(
             means, scores, nms_thresh, top_k)
         scores = np.expand_dims(scores, -1)
+
         selected_indices = indices[:count]
 
-        selection += list(selected_indices)  # note selected indices
+        # selection += list(selected_indices)  # note selected indices
 
-        selections = np.concatenate(
+        # save selected means and stds
+        selected_means = np.concatenate(
             (means[selected_indices], scores[selected_indices]), axis=1)
-        out_mean[class_arg, :count, :] = selections
+        out_mean[class_arg, :count, :] = selected_means
 
-        stds = decoded_stds
-        selections = np.concatenate(
+        selected_stds = np.concatenate(
             (stds[selected_indices], scores[selected_indices]), axis=1)
-        out_mean[class_arg, :count, :] = selections
+        out_std[class_arg, :count, :] = selected_stds
 
     return out_mean, out_std
 
@@ -65,8 +69,6 @@ class NMSPerClassDropout(NonMaximumSuppressionPerClass):
 
     def call(self, mean_data, std_data):
         means, stds = nms_per_class_dropout(mean_data, std_data, self.nms_thresh, self.conf_thresh)
-
-        print(mean_data.shape, std_data.shape)
         return means, stds
 
 
@@ -76,18 +78,16 @@ class CreateSTDBoxes(Processor):
         std_boxes = []
 
         # filter list to only compatible boxes
-        print(len(means), len(stds))
+        pairs = list(zip(means, stds))
 
         # create std boxes
-        for m, std in zip(means, stds):
+        for i, p in enumerate(pairs):
+            m, std = p
             x0 = m[0] - std[0]
             y0 = m[1] - std[1]
             x1 = m[2] + std[2]
-            y1 = m[3] + std[2]
-            coords = np.array([x0, y0, x1, y1])
+            y1 = m[3] + std[3]
+            coords = np.array([x0, y0, x1, y1, std[4], std[5]])
             std_boxes.append(coords)
 
-        # convert to np.array
-        std_boxes = np.array(std_boxes)
-
-        return std_boxes
+        return np.array(std_boxes)

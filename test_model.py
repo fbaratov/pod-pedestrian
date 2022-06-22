@@ -20,5 +20,6 @@ def test_dropout():
     trainer.show_results(k=100, show_truths=True, score_thresh=.1, nms=.4)
 
 
+
 if __name__ == "__main__":
     test_dropout()
