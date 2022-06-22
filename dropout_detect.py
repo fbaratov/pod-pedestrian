@@ -1,8 +1,9 @@
 import numpy as np
-from paz.abstract import SequentialProcessor, Processor
+from paz.abstract import SequentialProcessor
 import paz.processors as pr
 from paz.pipelines import DetectSingleShot
 
+from dropout_processors import *
 from generate_caltech_dict import class_names, class_labels
 
 
@@ -25,7 +26,21 @@ class DetectSingleShotDropout(DetectSingleShot):
         super(DetectSingleShotDropout, self).__init__(model, class_names, score_thresh, nms_thresh,
                                                       mean, variances, draw)
 
-        self.postprocessing = self.predict.postprocess
+        decode = SequentialProcessor([
+            pr.Squeeze(axis=None),
+            pr.DecodeBoxes(self.model.prior_boxes, self.variances)])
+
+        filter_boxes = pr.FilterBoxes(self.class_names, self.score_thresh)
+
+        self.postprocessing = SequentialProcessor([  # input: means before postproc, stds before postproc
+            pr.ControlMap(decode, intro_indices=[0], outro_indices=[0]), # get mean boxes, save indices
+            pr.ControlMap(decode, intro_indices=[1], outro_indices=[1]), # decode std
+            pr.ControlMap(NMSPerClassDropout(self.nms_thresh), intro_indices=[0, 1], outro_indices=[0, 1]),
+            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}), # get std boxes
+            pr.ControlMap(filter_boxes, intro_indices=[0], outro_indices=[0]), # filter means
+            pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]), # filter stds
+        ])
+
         self.predict.postprocess = None
         self.wrap = pr.WrapOutput(['image', 'boxes2D', 'std'])
 
@@ -37,47 +52,48 @@ class DetectSingleShotDropout(DetectSingleShot):
         for _ in range(k):
             # get regression and classification from prediction
             pred = self.predict(image)
-            pred_regr = pred[0]
-            pred_classify = pred[1]
+            pred_regr = pred[:, :, :4]
+            pred_classify = pred[:, :, 4:]
+            # print(pred_regr.shape, pred_classify.shape)
 
             # concatenate regression/classification predictions to arrays
             regr = np.concatenate([regr, pred_regr], axis=0)
             classify = np.concatenate([classify, pred_classify], axis=0)
 
-        # calculate regression mean
+        # calculate distribution values
         regr_mean = np.mean(regr, axis=0)
-        print(regr.shape, "=>", regr_mean.shape)
-
-        # calculate regression variance
         regr_std = np.std(regr, axis=0)
-        print(regr.shape, "=>", regr_std.shape)
-
-        # get classification mean
         classify_mean = np.mean(classify, axis=0)
-        print(classify.shape, "=>", classify_mean.shape)
 
-        # concatenate and postprocess
-        bbox_mean = np.concatenate([regr_mean, classify_mean], axis=1)
-        print(bbox_mean.shape)
-        boxes2D_normalized = self.postprocessing(bbox_mean)
+        # concatenate
+        means = np.concatenate([regr_mean, classify_mean], axis=1)
+        stds = np.concatenate([regr_std, classify_mean], axis=1)
+
+        # postprocess
+        # bbox_means_norm, selected_indices = self.postprocessing_mean(means)
+        bbox_means_norm, bbox_stds_norm = self.postprocessing(means, stds)
 
         # denormalize boxes and add to list
-        boxes2D = []
-        for box in boxes2D_normalized:
+        box_means = []
+        box_stds = []
+        for m, std in zip(bbox_means_norm, bbox_stds_norm):
             try:
-                denorm_box = self.denormalize(image, [box])
+                mean_denorm = self.denormalize(image, [m])[0]
+                std_denorm = self.denormalize(image, [std])[0]
 
                 # consider only boxes with valid coordinates
-                for db in denorm_box:
-                    x0, y0, x1, y1 = db.coordinates
-                    if (0 <= x0 <= image.shape[0] and 0 <= y0 <= image.shape[1] and
-                            0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):
-                        boxes2D.append(db)
+                # for db in denorm_box:
+                # x0, y0, x1, y1 = db.coordinates
+                # if (0 <= x0 <= image.shape[0] and 0 <= y0 <= image.shape[1] and
+                #        0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):
+                box_means.append(mean_denorm)
+                box_stds.append(std_denorm)
+                print(mean_denorm, std_denorm)
             except ValueError as e:
-                boxes2D_normalized.remove(box)
-                print("Failure to normalize mean box:", box)
+                print("Failure to normalize mean-std combo:", m, std)
 
-        if self.draw: # draw boxes if requested
-            image = self.draw_boxes2D(image, boxes2D)
+        if self.draw:  # draw boxes if requested
+            image = self.draw_boxes2D(image, box_means)
+            image = self.draw_boxes2D(image, box_stds)
 
-        return self.wrap(image, boxes2D, regr_std)
+        return self.wrap(image, box_means, box_stds)
