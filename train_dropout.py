@@ -10,11 +10,9 @@ def model_fn(prob=0.3):
     return ssd
 
 
-def train_dropout(split_name, model_name):
-
-
+def train_dropout(split_name, model_name, prob):
     # create new dropout model
-    model = model_fn(0.3)
+    model = model_fn(prob)
 
     # initialize trainer with model and set name
     trainer = DropoutTrainer(splits=retrieve_splits(split_name),
@@ -46,7 +44,6 @@ def train_dropout(split_name, model_name):
     # train model and plot loss
     hist = trainer.train(callbacks=cb, epochs=10)
 
-
     plt.plot(hist.history["loss"])
     plt.plot(hist.history["val_loss"])
     plt.legend()
@@ -55,4 +52,5 @@ def train_dropout(split_name, model_name):
 
 if __name__ == "__main__":
     train_dropout(split_name="all_classes_70_15_15",
-                  model_name="dropout_model_full_0")
+                  model_name="dropout_model_full_0",
+                  prob=0.3)

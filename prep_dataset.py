@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 from generate_caltech_dict import class_labels, class_names, PICKLE_DIR
 
 
-def load_data(split_name, test_size=0.3, val_size=.1, subset=None):
+def load_data(split_name, test_size=0.15, val_size=.15, subset=None):
     """
     Loads train/val/test splits from pickles
     :param split_name: Name of split set.
