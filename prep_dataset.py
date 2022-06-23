@@ -34,7 +34,7 @@ def load_data(split_name, test_size=0.3, val_size=.1, subset=None):
     return train_data, val_data, test_data
 
 
-def create_splits(split_name=None, test_size=0.3, val_size=.1, subset=None):
+def create_splits(split_name=None, test_size=0.15, val_size=.15, subset=None):
     """
     Create data splits.
     :param test_size:
@@ -74,7 +74,7 @@ def create_splits(split_name=None, test_size=0.3, val_size=.1, subset=None):
     pickle.dump(val_data, open(f"{split_dir}/validation.p", "wb"))
 
 
-def retrieve_splits(split_name, subset=None, test_split=0.3, val_split=0.1, batch_size=16):
+def retrieve_splits(split_name, subset=None, test_split=0.15, val_split=0.15, batch_size=16):
     """
     Creates a processor from a filepath/bbox dictionary that can be used to train a model.
     :param split_name: Name of dataset splits to retrieve.
@@ -106,4 +106,4 @@ def retrieve_splits(split_name, subset=None, test_split=0.3, val_split=0.1, batc
 
 if __name__ == "__main__":
     # adding comment to tests push access
-    load_data(split_name="full_set")
+    load_data(split_name="all_classes_70_15_15")

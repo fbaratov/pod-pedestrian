@@ -6,6 +6,9 @@ import numpy as np
 class_labels = {
     "background": 0,
     "person": 1,
+    "person-fa": 2,
+    "person?": 3,
+    "people": 4
 }
 class_names = list(class_labels.keys())
 
@@ -44,10 +47,11 @@ def extract_box_caltech(file, width=640, height=480):
             x1 = x0 + bw
             y1 = y0 + bh
             label_int = model_labels[label]
-            if label_int != 1:  # skip crowds and invalid numbers
+            """if label_int != 1:  # skip crowds and invalid numbers
                 # print(f"Invalid label: {x0, y0, x1, y1, label}")
-                continue
-            elif np.nan in (x0, y0, x1, y1) or np.inf in (x0, y0, x1, y1):
+                continue"""
+            # skip invalid coordinates
+            if np.nan in (x0, y0, x1, y1) or np.inf in (x0, y0, x1, y1):
                 # print(f"Invalid coords: {x0, y0, x1, y1, label}")
                 continue
             elif not (x0 < x1 and y0 < y1):
