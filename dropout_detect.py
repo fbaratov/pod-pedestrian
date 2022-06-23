@@ -56,29 +56,6 @@ class DetectSingleShotDropout(DetectSingleShot):
         # make predictions
         bbox_means_norm, bbox_stds_norm = self.predict(image, k)
 
-        """        for _ in range(k):
-            # get regression and classification from prediction
-            pred = self.predict(image)
-            pred_regr = pred[:, :, :4]
-            pred_classify = pred[:, :, 4:]
-            # print(pred_regr.shape, pred_classify.shape)
-
-            # concatenate regression/classification predictions to arrays
-            regr = np.concatenate([regr, pred_regr], axis=0)
-            classify = np.concatenate([classify, pred_classify], axis=0)
-
-        # calculate distribution values
-        regr_mean = np.mean(regr, axis=0)
-        regr_std = np.std(regr, axis=0)
-        classify_mean = np.mean(classify, axis=0)
-
-        # concatenate
-        means = np.concatenate([regr_mean, classify_mean], axis=1)
-        stds = np.concatenate([regr_std, classify_mean], axis=1)
-
-        # postprocess
-        # bbox_means_norm, selected_indices = self.postprocessing_mean(means)
-        bbox_means_norm, bbox_stds_norm = self.postprocessing(means, stds)"""
         # denormalize boxes and add to list
         box_means = []
         box_stds = []
