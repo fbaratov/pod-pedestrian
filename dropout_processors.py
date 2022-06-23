@@ -1,10 +1,10 @@
 import numpy as np
 from paz.abstract import Processor
 from paz.backend.boxes import apply_non_max_suppression
-from paz.processors import NonMaximumSuppressionPerClass
+from paz.processors import NonMaximumSuppressionPerClass, Predict
 
 
-def nms_per_class_dropout(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01, top_k=200):
+def nms_per_class_sampling(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01, top_k=200):
     """Applies non-maximum-suppression per class.
     # Arguments
         box_data: Numpy array of shape `(num_prior_boxes, 4 + num_classes)`.
@@ -14,7 +14,7 @@ def nms_per_class_dropout(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01,
         top_k: Integer. Maximum number of boxes per class outputted by nms.
 
     Returns
-        Numpy array of shape `(num_classes, top_k, 5)` and list of selected indices.
+        Two numpy arrays of shape `(num_classes, top_k, 5)`.
     """
     decoded_means, class_predictions = mean_data[:, :4], mean_data[:, 4:]
     decoded_stds = std_data[:, :4]
@@ -45,8 +45,6 @@ def nms_per_class_dropout(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01,
 
         selected_indices = indices[:count]
 
-        # selection += list(selected_indices)  # note selected indices
-
         # save selected means and stds
         selected_means = np.concatenate(
             (means[selected_indices], scores[selected_indices]), axis=1)
@@ -59,7 +57,7 @@ def nms_per_class_dropout(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01,
     return out_mean, out_std
 
 
-class NMSPerClassDropout(NonMaximumSuppressionPerClass):
+class NMSPerClassSampling(NonMaximumSuppressionPerClass):
     """Applies non maximum suppression for dropout predictions and indices in vector.
 
     # Arguments
@@ -68,12 +66,11 @@ class NMSPerClassDropout(NonMaximumSuppressionPerClass):
     """
 
     def call(self, mean_data, std_data):
-        means, stds = nms_per_class_dropout(mean_data, std_data, self.nms_thresh, self.conf_thresh)
+        means, stds = nms_per_class_sampling(mean_data, std_data, self.nms_thresh, self.conf_thresh)
         return means, stds
 
 
 class CreateSTDBoxes(Processor):
-
     def call(self, means, stds):
         std_boxes = []
 
@@ -84,17 +81,54 @@ class CreateSTDBoxes(Processor):
         for i, p in enumerate(pairs):
             m, std = p
 
-            """x0 = m[0] - std[0]
-            y0 = m[1] - std[1]
-            x1 = m[2] + std[2]
-            y1 = m[3] + std[3]
-            coords = np.array([x0, y0, x1, y1, std[4], std[5]])"""
-
             x = m[0]
             y = m[1]
             W = m[2] + std[0] + std[2]
             H = m[3] + std[1] + std[3]
-            coords = np.array([x, y, W, H, std[4], std[5]])
-            std_boxes.append(coords)
+            coords = np.array([x, y, W, H])
+
+            bbox = np.concatenate([coords, std[4:]], axis=0)
+            std_boxes.append(bbox)
 
         return np.array(std_boxes)
+
+
+class PredictBoxesSampling(Predict):
+
+    def call(self, x, k=100):
+        # preprocess x
+        if self.preprocess is not None:
+            x = self.preprocess(x)
+
+        # make predictions and concatenate
+        regr = None
+        classify = None
+
+        for _ in range(k):
+            # get regression and classification from prediction
+            y = self.model.predict(x)
+            y_regr = y[:, :, :4]
+            y_classify = y[:, :, 4:]
+
+            if regr is None:  # initialize regr/classification arrays
+                regr = np.empty(y_regr[1:, :, :].shape)
+                classify = np.empty(y_classify[1:, :, :].shape)
+
+            # concatenate regression/classification predictions to arrays
+            regr = np.concatenate([regr, y_regr], axis=0)
+            classify = np.concatenate([classify, y_classify], axis=0)
+
+        print(regr.shape, classify.shape)
+        # calculate distribution values
+        regr_mean = np.mean(regr, axis=0)
+        regr_std = np.std(regr, axis=0)
+        classify_mean = np.mean(classify, axis=0)
+
+        # concatenate
+        means = np.concatenate([regr_mean, classify_mean], axis=1)
+        stds = np.concatenate([regr_std, classify_mean], axis=1)
+
+        # postprocess
+        bbox_norm = self.postprocess(means, stds)
+
+        return bbox_norm

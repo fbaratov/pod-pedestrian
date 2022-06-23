@@ -28,34 +28,35 @@ class DetectSingleShotDropout(DetectSingleShot):
         super(DetectSingleShotDropout, self).__init__(model, class_names, score_thresh, nms_thresh,
                                                       mean, variances, draw)
 
+
+        # construct postprocessor
         decode = SequentialProcessor([
             pr.Squeeze(axis=None),
             pr.DecodeBoxes(self.model.prior_boxes, self.variances)])
 
         filter_boxes = pr.FilterBoxes(self.class_names, self.score_thresh)
 
-        self.postprocessing = SequentialProcessor([  # input: means before postproc, stds before postproc
-            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}),  # get std boxes
-
-            pr.ControlMap(decode, intro_indices=[0], outro_indices=[0]),  # decode, save encoded
-            pr.ControlMap(decode, intro_indices=[1], outro_indices=[1]),  # decode std
-
-            pr.ControlMap(NMSPerClassDropout(self.nms_thresh), intro_indices=[0, 1], outro_indices=[0, 1]),
-
-            # pr.ControlMap(NonMaximumSuppressionPerClass(2), intro_indices=[1], outro_indices=[1]), # format correctly
-            pr.ControlMap(filter_boxes, intro_indices=[0], outro_indices=[0]),  # filter means
-            pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]),  # filter stds
+        postprocessing = SequentialProcessor([  # input: means before postproc, stds before postproc
+            # construct std boxes
+            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}),
+            # decode boxes
+            pr.ControlMap(decode, intro_indices=[0], outro_indices=[0]),
+            pr.ControlMap(decode, intro_indices=[1], outro_indices=[1]),
+            # apply NMS based on means
+            pr.ControlMap(NMSPerClassSampling(self.nms_thresh), intro_indices=[0, 1], outro_indices=[0, 1]),
+            # filter boxes
+            pr.ControlMap(filter_boxes, intro_indices=[0], outro_indices=[0]),
+            pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]),
         ])
 
-        self.predict.postprocess = None
+        self.predict = PredictBoxesSampling(self.model, self.predict.preprocess, postprocessing)
         self.wrap = pr.WrapOutput(['image', 'boxes2D', 'std'])
 
     def call(self, image, k=100):
-        # make predictions and concatenate
-        regr = np.empty((0, 8732, 4))
-        classify = np.empty((0, 8732, len(class_names)))
+        # make predictions
+        bbox_means_norm, bbox_stds_norm = self.predict(image, k)
 
-        for _ in range(k):
+        """        for _ in range(k):
             # get regression and classification from prediction
             pred = self.predict(image)
             pred_regr = pred[:, :, :4]
@@ -77,7 +78,7 @@ class DetectSingleShotDropout(DetectSingleShot):
 
         # postprocess
         # bbox_means_norm, selected_indices = self.postprocessing_mean(means)
-        bbox_means_norm, bbox_stds_norm = self.postprocessing(means, stds)
+        bbox_means_norm, bbox_stds_norm = self.postprocessing(means, stds)"""
         # denormalize boxes and add to list
         box_means = []
         box_stds = []
