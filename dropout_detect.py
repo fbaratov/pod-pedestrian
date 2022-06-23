@@ -6,7 +6,6 @@ import paz.processors as pr
 from paz.pipelines import DetectSingleShot
 
 from dropout_processors import *
-from generate_caltech_dict import class_names, class_labels
 
 
 class StochasticDetectSingleShot(DetectSingleShot):
@@ -28,7 +27,6 @@ class StochasticDetectSingleShot(DetectSingleShot):
         super(StochasticDetectSingleShot, self).__init__(model, class_names, score_thresh, nms_thresh,
                                                          mean, variances, draw)
 
-
         # construct postprocessor
         decode = SequentialProcessor([
             pr.Squeeze(axis=None),
@@ -49,6 +47,7 @@ class StochasticDetectSingleShot(DetectSingleShot):
             pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]),
         ])
 
+        # create predictor and output wrap
         self.predict = PredictBoxesSampling(self.model, self.predict.preprocess, postprocessing)
         self.wrap = pr.WrapOutput(['image', 'boxes2D', 'std'])
 
@@ -62,14 +61,6 @@ class StochasticDetectSingleShot(DetectSingleShot):
         for m, std in zip(bbox_means_norm, bbox_stds_norm):
             try:
                 mean_denorm, std_denorm = self.denormalize(image, [m, std])
-                # consider only boxes with valid coordinates
-                # for db in denorm_box:
-                # x0, y0, x1, y1 = db.coordinates
-                # if (0 <= x0 <= image.shape[0] and 0 <= y0 <= image.shape[1] and
-                #        0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):
-                print("SUCCESSFUL MEAN-STD")
-                print(mean_denorm)
-                print(std_denorm)
                 box_means.append(mean_denorm)
                 box_stds.append(std_denorm)
             except ValueError as e:

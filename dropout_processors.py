@@ -118,7 +118,6 @@ class PredictBoxesSampling(Predict):
             regr = np.concatenate([regr, y_regr], axis=0)
             classify = np.concatenate([classify, y_classify], axis=0)
 
-        print(regr.shape, classify.shape)
         # calculate distribution values
         regr_mean = np.mean(regr, axis=0)
         regr_std = np.std(regr, axis=0)
