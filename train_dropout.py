@@ -36,7 +36,7 @@ def train_dropout(split_name, model_name):
     )
 
     # callbacks (passed to trainer.train)
-cb = [EarlyStopping(monitor='val_loss',
+    cb = [EarlyStopping(monitor='val_loss',
           patience=5,
           min_delta=0.005,
           verbose=1,
