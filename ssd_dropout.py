@@ -70,12 +70,12 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv1_1')(image)
-    conv1_1 = StochasticDropout(prob)(conv1_1)
+    #conv1_1 = StochasticDropout(prob)(conv1_1)
     conv1_2 = Conv2D(64, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv1_2')(conv1_1)
-    conv1_2 = StochasticDropout(prob)(conv1_2)
+    #conv1_2 = StochasticDropout(prob)(conv1_2)
     pool1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2),
                          padding='same', )(conv1_2)
 
@@ -84,12 +84,12 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv2_1')(pool1)
-    conv2_1 = StochasticDropout(prob)(conv2_1)
+    #conv2_1 = StochasticDropout(prob)(conv2_1)
     conv2_2 = Conv2D(128, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv2_2')(conv2_1)
-    conv2_2 = StochasticDropout(prob)(conv2_2)
+    #conv2_2 = StochasticDropout(prob)(conv2_2)
     pool2 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2),
                          padding='same')(conv2_2)
 
@@ -98,17 +98,17 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv3_1')(pool2)
-    conv3_1 = StochasticDropout(prob)(conv3_1)
+    #conv3_1 = StochasticDropout(prob)(conv3_1)
     conv3_2 = Conv2D(256, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv3_2')(conv3_1)
-    conv3_2 = StochasticDropout(prob)(conv3_2)
+    #conv3_2 = StochasticDropout(prob)(conv3_2)
     conv3_3 = Conv2D(256, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv3_3')(conv3_2)
-    conv3_3 = StochasticDropout(prob)(conv3_3)
+    #conv3_3 = StochasticDropout(prob)(conv3_3)
     pool3 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2),
                          padding='same')(conv3_3)
 
@@ -117,17 +117,17 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv4_1')(pool3)
-    conv4_1 = StochasticDropout(prob)(conv4_1)
+    #conv4_1 = StochasticDropout(prob)(conv4_1)
     conv4_2 = Conv2D(512, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv4_2')(conv4_1)
-    conv4_2 = StochasticDropout(prob)(conv4_2)
+    #conv4_2 = StochasticDropout(prob)(conv4_2)
     conv4_3 = Conv2D(512, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv4_3')(conv4_2)
-    conv4_3 = StochasticDropout(prob)(conv4_3)
+    #conv4_3 = StochasticDropout(prob)(conv4_3)
     conv4_3_norm = Conv2DNormalization(20, name='branch_1')(conv4_3)
     pool4 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2),
                          padding='same')(conv4_3)
@@ -137,17 +137,17 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv5_1')(pool4)
-    conv5_1 = StochasticDropout(prob)(conv5_1)
+    #conv5_1 = StochasticDropout(prob)(conv5_1)
     conv5_2 = Conv2D(512, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv5_2')(conv5_1)
-    conv5_2 = StochasticDropout(prob)(conv5_2)
+    #conv5_2 = StochasticDropout(prob)(conv5_2)
     conv5_3 = Conv2D(512, (3, 3), padding='same', activation='relu',
                      kernel_regularizer=l2(l2_loss),
                      trainable=trainable_base,
                      name='conv5_3')(conv5_2)
-    conv5_3 = StochasticDropout(prob)(conv5_3)
+    #conv5_3 = StochasticDropout(prob)(conv5_3)
     pool5 = MaxPooling2D(pool_size=(3, 3), strides=(1, 1),
                          padding='same')(conv5_3)
 
