@@ -83,11 +83,18 @@ class CreateSTDBoxes(Processor):
         # create std boxes
         for i, p in enumerate(pairs):
             m, std = p
-            x0 = m[0] - std[0]
+
+            """x0 = m[0] - std[0]
             y0 = m[1] - std[1]
             x1 = m[2] + std[2]
             y1 = m[3] + std[3]
-            coords = np.array([x0, y0, x1, y1, std[4], std[5]])
+            coords = np.array([x0, y0, x1, y1, std[4], std[5]])"""
+
+            x = m[0]
+            y = m[1]
+            W = m[2] + std[0] + std[2]
+            H = m[3] + std[1] + std[3]
+            coords = np.array([x, y, W, H, std[4], std[5]])
             std_boxes.append(coords)
 
         return np.array(std_boxes)

@@ -35,10 +35,10 @@ class DetectSingleShotDropout(DetectSingleShot):
         filter_boxes = pr.FilterBoxes(self.class_names, self.score_thresh)
 
         self.postprocessing = SequentialProcessor([  # input: means before postproc, stds before postproc
+            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}),  # get std boxes
+
             pr.ControlMap(decode, intro_indices=[0], outro_indices=[0]),  # decode, save encoded
             pr.ControlMap(decode, intro_indices=[1], outro_indices=[1]),  # decode std
-
-            pr.ControlMap(CreateSTDBoxes(), intro_indices=[0, 1], outro_indices=[1], keep={0: 0}),  # get std boxes
 
             pr.ControlMap(NMSPerClassDropout(self.nms_thresh), intro_indices=[0, 1], outro_indices=[0, 1]),
 
@@ -78,7 +78,6 @@ class DetectSingleShotDropout(DetectSingleShot):
         # postprocess
         # bbox_means_norm, selected_indices = self.postprocessing_mean(means)
         bbox_means_norm, bbox_stds_norm = self.postprocessing(means, stds)
-        print(len(bbox_means_norm), len(bbox_stds_norm))
         # denormalize boxes and add to list
         box_means = []
         box_stds = []
@@ -90,6 +89,9 @@ class DetectSingleShotDropout(DetectSingleShot):
                 # x0, y0, x1, y1 = db.coordinates
                 # if (0 <= x0 <= image.shape[0] and 0 <= y0 <= image.shape[1] and
                 #        0 <= x1 <= image.shape[0] and 0 <= y1 <= image.shape[1]):
+                print("SUCCESSFUL MEAN-STD")
+                print(mean_denorm)
+                print(std_denorm)
                 box_means.append(mean_denorm)
                 box_stds.append(std_denorm)
             except ValueError as e:

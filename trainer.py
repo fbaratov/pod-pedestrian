@@ -13,6 +13,7 @@ from paz.evaluation import evaluateMAP
 from paz.pipelines.detection import DetectSingleShot
 from generate_caltech_dict import class_labels, class_names
 from dropout_detect import DetectSingleShotDropout
+from visualize_dropout import DrawBoxesDropout
 
 
 class Trainer:
@@ -201,13 +202,15 @@ class DropoutTrainer(Trainer):
 
             results = self.predict_model(fp, threshold=score_thresh, nms=nms)
             show_image = ShowImage()
-            draw_mean = DrawBoxes2D(class_names)
+            draw_mean = DrawBoxes2D(class_names, scale=0.5)
+            draw_stds = DrawBoxesDropout(class_names, colors=draw_mean.colors, scale=0)
 
             image = results["image"]
             draw_img = draw_mean(image, [])
 
             # draw boxes
             draw_img = draw_mean(draw_img, results["boxes2D"])
+            draw_img = draw_stds(draw_img, results["std"])
 
             # draw truths if requested
             if show_truths:
