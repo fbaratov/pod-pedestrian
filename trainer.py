@@ -96,7 +96,7 @@ class Trainer:
         # save model params and mark as trained
         self.model.save(f"models/{self.model_name}")
         pickle.dump(self.model.prior_boxes, open(f"models/{self.model_name}/prior_boxes.p", "wb"))
-
+        pickle.dump(history, open(f"models/{self.model_name}/train_hist.p"))
         return history
 
     def predict_model(self, img, fp=True, threshold=0.5, nms=0.5):
