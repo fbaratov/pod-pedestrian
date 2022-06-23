@@ -9,7 +9,7 @@ from dropout_processors import *
 from generate_caltech_dict import class_names, class_labels
 
 
-class DetectSingleShotDropout(DetectSingleShot):
+class StochasticDetectSingleShot(DetectSingleShot):
     """Single-shot object detection prediction.
 
     # Arguments
@@ -25,8 +25,8 @@ class DetectSingleShotDropout(DetectSingleShot):
                  mean=pr.BGR_IMAGENET_MEAN, variances=[0.1, 0.1, 0.2, 0.2],
                  draw=True):
 
-        super(DetectSingleShotDropout, self).__init__(model, class_names, score_thresh, nms_thresh,
-                                                      mean, variances, draw)
+        super(StochasticDetectSingleShot, self).__init__(model, class_names, score_thresh, nms_thresh,
+                                                         mean, variances, draw)
 
 
         # construct postprocessor

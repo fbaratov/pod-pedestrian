@@ -12,7 +12,7 @@ from os.path import exists, isdir
 from paz.evaluation import evaluateMAP
 from paz.pipelines.detection import DetectSingleShot
 from generate_caltech_dict import class_labels, class_names
-from dropout_detect import DetectSingleShotDropout
+from dropout_detect import StochasticDetectSingleShot
 from visualize_dropout import DrawBoxesDropout
 
 
@@ -178,7 +178,7 @@ class DropoutTrainer(Trainer):
         :return: BBox prediction
         """
         image = load_image(img) if fp else img
-        detector = DetectSingleShotDropout(self.model, class_names, threshold, nms, draw=False)
+        detector = StochasticDetectSingleShot(self.model, class_names, threshold, nms, draw=False)
         results = detector(image)
         return results
 
