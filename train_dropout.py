@@ -1,8 +1,11 @@
+from keras.callbacks import EarlyStopping
 from keras.utils import plot_model
+from matplotlib import pyplot as plt
 
+from generate_caltech_dict import class_labels, class_names
 from prep_dataset import retrieve_splits
 from ssd_dropout import SSD300_dropout
-from train_net import *
+from trainer import DropoutTrainer
 
 
 def model_fn(prob=0.3):

@@ -7,7 +7,7 @@ from trainer import DropoutTrainer
 
 def test_dropout():
     split_name = "full_set"
-    model_name = "model_dropout_bigboi"
+    model_name = "dropout_model_full_0"
 
     trainer = DropoutTrainer(model=model_name,
                              splits=retrieve_splits(split_name))
@@ -16,7 +16,7 @@ def test_dropout():
     model = trainer.model
 
     # generate predictions
-    trainer.show_results(k=100, show_truths=True, score_thresh=.1, nms=.4)
+    trainer.show_results(k=100, show_truths=True, score_thresh=.3, nms=.6)
 
 
 

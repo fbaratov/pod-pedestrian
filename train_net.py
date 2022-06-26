@@ -3,7 +3,8 @@ from matplotlib import pyplot as plt
 from paz.models import SSD300
 
 from prep_dataset import retrieve_splits
-from trainer import *
+from trainer import Trainer
+from generate_caltech_dict import class_labels, class_names
 
 
 def model_fn():
@@ -21,6 +22,7 @@ def train_net(epochs=10):
     split_names = "full_set"
     trainer = Trainer(splits=retrieve_splits(split_names),
                       model=model_fn())
+    trainer.model_name = "model_full_0"
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
@@ -40,4 +42,4 @@ def train_net(epochs=10):
 
 
 if __name__ == "__main__":
-    train_net(epochs=5)
+    train_net(epochs=10)
