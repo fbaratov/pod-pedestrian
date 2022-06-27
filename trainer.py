@@ -1,6 +1,9 @@
+from os import mkdir
 from random import sample
+
+from cv2 import imwrite
 from keras.optimizers import SGD
-from paz.backend.image import load_image, GREEN
+from paz.backend.image import load_image, GREEN, convert_color_space, RGB2BGR
 from paz.models.detection.utils import create_prior_boxes
 from paz.optimization import MultiBoxLoss
 from paz.processors import ShowImage, DenormalizeBoxes2D, DrawBoxes2D, ToBoxes2D
@@ -127,9 +130,11 @@ class Trainer:
         results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.3)
         return results
 
-    def show_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5):
+    def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False, draw_set = None):
         """
         Makes predictions on random samples from the test dataset and displays them.
+        :param save_image:
+        :param show_results:
         :param nms:
         :param score_thresh:
         :param k: Number of predictions to make
@@ -139,7 +144,10 @@ class Trainer:
             k = len(self.d_test)
 
         # visualize all images that have bounding boxes
-        for i, d in enumerate(sample(self.d_test, k=k)):
+        if draw_set is None:
+            draw_set = sample(self.d_test, k=k)
+
+        for i, d in enumerate(draw_set):
             if not i % int(k / 20):
                 print(f"{i}/{k}")
             fp = d["image"]
@@ -163,7 +171,22 @@ class Trainer:
                 boxes2D = denormalize(image, boxes2D)
                 draw_truths = DrawBoxes2D(class_names, colors=[list(GREEN), list(GREEN)])
                 draw_img = draw_truths(draw_img, boxes2D)
-            show_image(draw_img)
+
+            if show_results:
+                show_image(draw_img)
+
+            if save_image:
+                self.save_image(fp, draw_img)
+
+    def save_image(self, fp, img):
+        if not self.model_name:
+            raise ValueError("No model name, can't save image!")
+        if not exists(f"predictions/{self.model_name}"):
+            mkdir(f"predictions/{self.model_name}")
+
+        img_name = fp.split("/")[-1]
+        img = convert_color_space(img, RGB2BGR)
+        imwrite(f"predictions/{self.model_name}/{img_name}", img)
 
 
 class DropoutTrainer(Trainer):
@@ -182,20 +205,24 @@ class DropoutTrainer(Trainer):
         results = detector(image)
         return results
 
-    def show_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5):
+    def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False, draw_set = None):
         """
         Makes predictions on random samples from the test dataset and displays them.
+        :param save_image:
+        :param show_results:
         :param nms:
         :param score_thresh:
         :param k: Number of predictions to make
         :param show_truths: If True, displays the correct annotations alongside the predictions.
         """
-        # limit number of predictions to be between 0 and the length of the test set
         if not k or k > len(self.d_test):
             k = len(self.d_test)
 
-        # visualize all images
-        for i, d in enumerate(sample(self.d_test, k=k)):
+        # visualize all images that have bounding boxes
+        if draw_set is None:
+            draw_set = sample(self.d_test, k=k)
+
+        for i, d in enumerate(draw_set):
             if not i % int(k / 20):
                 print(f"{i}/{k}")
             fp = d["image"]
@@ -220,4 +247,9 @@ class DropoutTrainer(Trainer):
                 boxes2D = denormalize(image, boxes2D)
                 draw_truths = DrawBoxes2D(class_names, colors=[list(GREEN), list(GREEN)])
                 draw_img = draw_truths(draw_img, boxes2D)
-            show_image(draw_img)
+
+            if show_results:
+                show_image(draw_img)
+
+            if save_image:
+                self.save_image(fp, draw_img)
