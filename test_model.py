@@ -6,7 +6,7 @@ import argparse
 
 
 def test_baseline(model_name="dropout_model_full_0", split_name="full_set", k=100, show_truths=True, score_thresh=.3,
-                  nms=.6, show_results=False, save_results=False):
+                  nms=.6, show_results=False, save_results=False, eval_map=False):
     trainer = Trainer(model=model_name,
                       splits=retrieve_splits(split_name))
 
@@ -14,15 +14,22 @@ def test_baseline(model_name="dropout_model_full_0", split_name="full_set", k=10
     if show_results or save_results:
         trainer.draw_results(k, show_truths, score_thresh, nms, show_results, save_results)
 
+    if eval_map:
+        map_score = trainer.evaluate(score_thresh, nms)
+        print(map_score)
 
 def test_dropout(model_name="dropout_model_full_0", split_name="full_set", k=100, show_truths=True, score_thresh=.3,
-                 nms=.6, show_results=False, save_results=False):
+                 nms=.6, show_results=False, save_results=False, eval_map=False):
     trainer = DropoutTrainer(model=model_name,
                              splits=retrieve_splits(split_name))
 
     # generate predictions
     if show_results or save_results:
         trainer.draw_results(k, show_truths, score_thresh, nms, show_results, save_results)
+
+    if eval_map:
+        map_score = trainer.evaluate(score_thresh, nms)
+        print(map_score)
 
 
 def compare_models(model0, model1, split_name, k=100, show_truths=True, score_thresh=.3,
@@ -56,6 +63,8 @@ def compare_models(model0, model1, split_name, k=100, show_truths=True, score_th
         trainer1.draw_results(k, show_truths, score_thresh, nms, show_results, save_results, draw_set=predict_sample)
 
 
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('model_type', type=str, help='model type, either \'baseline\', \'dropout\'')
@@ -72,7 +81,8 @@ if __name__ == "__main__":
                         help='if True, compares two provided models by evaluating them on the same set', default=False)
     parser.add_argument('--second_model_type', type=str,
                         help='second model type for comparison, either \'baseline\', \'dropout\'', default=None)
-    parser.add_argument('--second_model_name', type=str, help='second model directory name for comparison', default=None)
+    parser.add_argument('--second_model_name', type=str, help='second model directory name for comparison',
+                        default=None)
 
     a = parser.parse_args()
 
@@ -85,9 +95,9 @@ if __name__ == "__main__":
             raise ValueError("Invalid model type provided!")
     elif a.model_type == 'baseline':
         test_baseline(a.model_name, a.split_name, a.k, a.show_truths, a.score_threshold, a.nms, a.show_results,
-                      a.save_results)
+                      a.save_results, a.map)
     elif a.model_type == 'dropout':
         test_dropout(a.model_name, a.split_name, a.k, a.show_truths, a.score_threshold, a.nms, a.show_results,
-                     a.save_results)
+                     a.save_results, a.map)
     else:
         raise ValueError("Invalid model type provided!")

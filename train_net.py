@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from paz.models import SSD300
 
 from prep_dataset import retrieve_splits
+from ssd_baseline import SSD300_baseline
 from trainer import Trainer
 from generate_caltech_dict import class_labels, class_names
 
@@ -19,10 +20,10 @@ def train_net(epochs=10):
     """
 
     # create trainer (used to train model/predict/evaluate as well as to create dataset splits)
-    split_names = "full_set"
+    split_names = "caltech_split69"
     trainer = Trainer(splits=retrieve_splits(split_names),
                       model=model_fn())
-    trainer.model_name = "model_full_0"
+    trainer.model_name="cowabunghole"
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
@@ -35,10 +36,10 @@ def train_net(epochs=10):
     # train model and plot loss
     hist = trainer.train(callbacks=cb, epochs=epochs)
 
-    plt.plot(hist.history["loss"])
+    """plt.plot(hist.history["loss"])
     plt.plot(hist.history["val_loss"])
     plt.legend()
-    plt.show()
+    plt.show()"""
 
 
 if __name__ == "__main__":

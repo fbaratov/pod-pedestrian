@@ -54,6 +54,6 @@ def train_dropout(split_name, model_name, prob):
 
 
 if __name__ == "__main__":
-    train_dropout(split_name="all_classes_70_15_15",
-                  model_name="dropout_model_full_0",
+    train_dropout(split_name="caltech_split",
+                  model_name="dropout_model_caltech_0",
                   prob=0.3)

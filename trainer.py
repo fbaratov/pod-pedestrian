@@ -19,6 +19,7 @@ from dropout_detect import StochasticDetectSingleShot
 from visualize_dropout import DrawBoxesDropout
 
 
+
 class Trainer:
     """
     Trains model to data.
@@ -46,9 +47,9 @@ class Trainer:
         """
 
         optimizer = SGD(learning_rate=0.001,
-                        momentum=0.5)
+                        momentum=0.6)
 
-        loss = MultiBoxLoss()
+        loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.0, max_num_negatives=16)
         metrics = {'boxes': [loss.localization,
                              loss.positive_classification,
                              loss.negative_classification]}
@@ -99,7 +100,7 @@ class Trainer:
         # save model params and mark as trained
         self.model.save(f"models/{self.model_name}")
         pickle.dump(self.model.prior_boxes, open(f"models/{self.model_name}/prior_boxes.p", "wb"))
-        pickle.dump(history, open(f"models/{self.model_name}/train_hist.p", "wb"))
+        pickle.dump(history.history, open(f"models/{self.model_name}/train_hist.p", "wb"))
         return history
 
     def predict_model(self, img, fp=True, threshold=0.5, nms=0.5):
@@ -126,8 +127,9 @@ class Trainer:
 
         names = class_names
         labels = class_labels
+
         detector = DetectSingleShot(self.model, names, threshold, nms, draw=False)
-        results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.3)
+        results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.0)
         return results
 
     def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False, draw_set = None):
@@ -148,8 +150,6 @@ class Trainer:
             draw_set = sample(self.d_test, k=k)
 
         for i, d in enumerate(draw_set):
-            if not i % int(k / 20):
-                print(f"{i}/{k}")
             fp = d["image"]
 
             results = self.predict_model(fp, threshold=score_thresh, nms=nms)

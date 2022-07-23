@@ -22,7 +22,7 @@ class StochasticDetectSingleShot(DetectSingleShot):
 
     def __init__(self, model, class_names, score_thresh, nms_thresh,
                  mean=pr.BGR_IMAGENET_MEAN, variances=[0.1, 0.1, 0.2, 0.2],
-                 draw=True):
+                 draw=True, filter_std=False):
 
         super(StochasticDetectSingleShot, self).__init__(model, class_names, score_thresh, nms_thresh,
                                                          mean, variances, draw)
