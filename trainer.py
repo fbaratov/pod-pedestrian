@@ -1,6 +1,7 @@
 from os import mkdir
 from random import sample
 
+import numpy as np
 from cv2 import imwrite
 from keras.optimizers import SGD
 from paz.backend.image import load_image, GREEN, convert_color_space, RGB2BGR
@@ -16,8 +17,25 @@ from paz.evaluation import evaluateMAP
 from paz.pipelines.detection import DetectSingleShot
 from generate_caltech_dict import class_labels, class_names
 from dropout_detect import StochasticDetectSingleShot
+from ssd_dropout import SSD300_dropout
 from visualize_dropout import DrawBoxesDropout
 
+
+def model_fn(prob=0.3):
+    ssd = SSD300_dropout(num_classes=len(class_names), base_weights='VGG', head_weights=None, prob=prob)
+
+    optimizer = SGD(learning_rate=0.001,
+                    momentum=0.6)
+
+    loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.0, max_num_negatives=16)
+
+    metrics = {'boxes': [loss.localization,
+                         loss.positive_classification,
+                         loss.negative_classification]}
+
+    ssd.compile(optimizer=optimizer, loss=loss.compute_loss, metrics=metrics)
+
+    return ssd
 
 
 class Trainer:
@@ -129,10 +147,15 @@ class Trainer:
         labels = class_labels
 
         detector = DetectSingleShot(self.model, names, threshold, nms, draw=False)
-        results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.0)
+        test_set = self.d_test
+        for i, d in enumerate(test_set):
+            for j, b in enumerate(d['boxes']):
+                d['boxes'][j] = np.array([b[0] * 640, b[1] * 480, b[2] * 640, b[3] * 480, b[4]])
+        results = evaluateMAP(detector, test_set, labels, iou_thresh=.5)
         return results
 
-    def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False, draw_set = None):
+    def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False,
+                     draw_set=None):
         """
         Makes predictions on random samples from the test dataset and displays them.
         :param save_image:
@@ -191,6 +214,26 @@ class Trainer:
 
 class DropoutTrainer(Trainer):
 
+    def evaluate(self, threshold=0.5, nms=0.5):
+        """
+        :param threshold: score threshold
+        :param nms: NMS threshold
+        Evaluates model using test dataset.
+        :return: Dict with results
+        """
+
+        names = class_names
+        labels = class_labels
+
+        detector = StochasticDetectSingleShot(self.model, names, threshold, nms, draw=False)
+        test_set = self.d_test
+        for i, d in enumerate(test_set):
+            for j, b in enumerate(d['boxes']):
+                d['boxes'][j] = np.array([b[0] * 640, b[1] * 480, b[2] * 640, b[3] * 480, b[4]])
+
+        results = evaluateMAP(detector, self.d_test, labels, iou_thresh=.5)
+        return results
+
     def predict_model(self, img, fp=True, threshold=0.5, nms=0.5):
         """
         Uses model to make a prediction with the given image.
@@ -201,11 +244,13 @@ class DropoutTrainer(Trainer):
         :return: BBox prediction
         """
         image = load_image(img) if fp else img
-        detector = StochasticDetectSingleShot(self.model, class_names, threshold, nms, draw=False)
+
+        detector = StochasticDetectSingleShot(self.model, class_names, threshold, nms, draw=False, filter_std=False)
         results = detector(image)
         return results
 
-    def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False, draw_set = None):
+    def draw_results(self, k=None, show_truths=False, score_thresh=.5, nms=.5, show_results=False, save_image=False,
+                     draw_set=None):
         """
         Makes predictions on random samples from the test dataset and displays them.
         :param save_image:
@@ -215,6 +260,11 @@ class DropoutTrainer(Trainer):
         :param k: Number of predictions to make
         :param show_truths: If True, displays the correct annotations alongside the predictions.
         """
+
+        old_model = self.model
+        self.model = model_fn(prob=0)
+        self.model.set_weights(old_model.get_weights())
+
         if not k or k > len(self.d_test):
             k = len(self.d_test)
 
@@ -223,8 +273,6 @@ class DropoutTrainer(Trainer):
             draw_set = sample(self.d_test, k=k)
 
         for i, d in enumerate(draw_set):
-            if not i % int(k / 20):
-                print(f"{i}/{k}")
             fp = d["image"]
 
             results = self.predict_model(fp, threshold=score_thresh, nms=nms)

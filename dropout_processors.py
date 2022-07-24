@@ -70,6 +70,31 @@ class NMSPerClassSampling(NonMaximumSuppressionPerClass):
         return means, stds
 
 
+class STDFilter(Processor):
+    def __init__(self, name=None, iou=0.85):
+        self.name = name
+        self.iou = iou
+
+    def call(self, means, stds):
+        filtered_means, filtered_stds = [], []
+        for m, s in zip(means, stds):
+            mc = m.coordinates
+            mx = mc[2] - mc[0]
+            my = mc[3] - mc[1]
+            ma = mx * my
+
+            sc = s.coordinates
+            sx = sc[2] - sc[0]
+            sy = sc[3] - sc[1]
+            sa = sx * sy
+
+            if ma / sa > self.iou:
+                filtered_means.append(m)
+                filtered_stds.append(s)
+
+        return filtered_means, filtered_stds
+
+
 class CreateSTDBoxes(Processor):
     def call(self, means, stds):
         std_boxes = []

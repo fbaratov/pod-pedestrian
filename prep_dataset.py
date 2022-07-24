@@ -2,6 +2,7 @@ from os import mkdir
 from os.path import exists, isdir
 from random import sample
 
+import numpy as np
 from paz.models.detection.utils import create_prior_boxes
 from paz.pipelines import AugmentDetection
 
@@ -121,8 +122,6 @@ def retrieve_splits(split_name, batch_size=16):
                                      mean=None, IOU=.5,
                                      variances=[0.1, 0.1, 0.2, 0.2])
 
-
-
     # create and save sequences
     train_seq = ProcessingSequence(train_processor, batch_size, train_data)
     val_seq = ProcessingSequence(val_processor, batch_size, val_data)
@@ -132,6 +131,18 @@ def retrieve_splits(split_name, batch_size=16):
 
 
 if __name__ == "__main__":
-    # adding comment to tests push access
-    create_caltech_splits()
-    retrieve_splits('caltech_split699')
+    """dataset = pickle.load(open('pickle/dataset.p', 'rb'))
+    count = 0
+    for img in dataset:
+        boxes = img['boxes']
+        for box in boxes:
+            for coord in box[0:4]:
+                if not 0 <= coord <= 1.005:
+                    if coord != 1.00208333 and coord != 1.0015625:
+                        print(box)
+                        count += 1
+                        continue
+
+    print(count)"""
+
+    retrieve_splits("caltech_split699")

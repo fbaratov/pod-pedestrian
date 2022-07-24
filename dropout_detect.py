@@ -47,11 +47,16 @@ class StochasticDetectSingleShot(DetectSingleShot):
             pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]),
         ])
 
+        if filter_std:
+            std_filter = STDFilter(iou=0.75)
+            std_filter = pr.ControlMap(std_filter, intro_indices=[0, 1], outro_indices=[0, 1])
+            postprocessing.processors.append(std_filter)
+
         # create predictor and output wrap
         self.predict = PredictBoxesSampling(self.model, self.predict.preprocess, postprocessing)
         self.wrap = pr.WrapOutput(['image', 'boxes2D', 'std'])
 
-    def call(self, image, k=100):
+    def call(self, image, k=5):
         # make predictions
         bbox_means_norm, bbox_stds_norm = self.predict(image, k)
 
