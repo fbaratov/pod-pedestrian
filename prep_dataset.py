@@ -1,8 +1,6 @@
 from os import mkdir
 from os.path import exists, isdir
-from random import sample
 
-import numpy as np
 from paz.models.detection.utils import create_prior_boxes
 from paz.pipelines import AugmentDetection
 
@@ -32,8 +30,13 @@ def load_data(split_name):
     return train_data, val_data, test_data
 
 
-def create_caltech_splits():
-    split_dir = f"{PICKLE_DIR}/caltech_split699"
+def create_caltech_splits(split_dir, caltech_dir):
+    """
+    Create data splits based on caltech sets.
+    :param split_dir: Directory to save splits in
+    :param caltech_dir: Directory with caltech data sets.
+    :return:
+    """
     if not isdir(split_dir):
         mkdir(split_dir)
 
@@ -44,15 +47,15 @@ def create_caltech_splits():
     train_data, test_data, val_data = [], [], []
 
     for fname in train_sets:
-        tset = pickle.load(open(f"{PICKLE_DIR}/by_set_AAA/{fname}", "rb"))
+        tset = pickle.load(open(f"{caltech_dir}/{fname}", "rb"))
         train_data += tset
 
     for fname in test_sets:
-        tset = pickle.load(open(f"{PICKLE_DIR}/by_set_AAA/{fname}", "rb"))
+        tset = pickle.load(open(f"{caltech_dir}/{fname}", "rb"))
         test_data += tset
 
     for fname in val_sets:
-        vset = pickle.load(open(f"{PICKLE_DIR}/by_set_AAA/{fname}", "rb"))
+        vset = pickle.load(open(f"{caltech_dir}/{fname}", "rb"))
         val_data += vset
 
     pickle.dump(train_data, open(f"{split_dir}/train.p", "wb"))
@@ -60,39 +63,26 @@ def create_caltech_splits():
     pickle.dump(val_data, open(f"{split_dir}/validation.p", "wb"))
 
 
-def create_splits(split_name=None, test_size=0.15, val_size=.15, subset=None):
+def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
     """
     Create data splits.
+    :param dataset_path:
+    :param split_dir:
     :param test_size:
     :param val_size:
-    :param subset:
-    :param split_name:
     :return:
     """
-    if split_name is None:
-        i = 0
-        while isdir(f"{PICKLE_DIR}/split{i}"):
-            i += 1
-        split_name = f"split{i}"
-
-    split_dir = f"{PICKLE_DIR}/{split_name}"
 
     if not isdir(split_dir):
         mkdir(split_dir)
 
-    data = pickle.load(open(f"{PICKLE_DIR}/dataset.p", "rb"))
+    data = pickle.load(open(f"{PICKLE_DIR}/{dataset_path}.p", "rb"))
 
-    # split d_test/d_train
+    # split test/train
     train_data, test_data = train_test_split(data, test_size=test_size + val_size)
 
     # get validation subset
     test_data, val_data = train_test_split(test_data, test_size=val_size / (val_size + test_size))
-
-    # get train data subset
-    if subset:
-        train_data = sample(train_data, k=int(subset * len(train_data)))
-        test_data = sample(test_data, k=int(subset * len(test_data)))
-        val_data = sample(val_data, k=int(subset * len(val_data)))
 
     # save splits
     pickle.dump(train_data, open(f"{split_dir}/train.p", "wb"))
@@ -104,11 +94,8 @@ def retrieve_splits(split_name, batch_size=16):
     """
     Creates a processor from a filepath/bbox dictionary that can be used to train a model.
     :param split_name: Name of dataset splits to retrieve.
-    :param subset: How much of each split to use. If None, uses whole split.
-    :param test_split: Size of test split
-    :param val_split: Size of validation split
     :param batch_size: Input batch size.
-    :return: Train and d_test processors for the data.
+    :return: Train and validation splits as processors, test split as dictionary .
     """
     train_data, val_data, test_data = load_data(split_name)
 
@@ -131,18 +118,4 @@ def retrieve_splits(split_name, batch_size=16):
 
 
 if __name__ == "__main__":
-    """dataset = pickle.load(open('pickle/dataset.p', 'rb'))
-    count = 0
-    for img in dataset:
-        boxes = img['boxes']
-        for box in boxes:
-            for coord in box[0:4]:
-                if not 0 <= coord <= 1.005:
-                    if coord != 1.00208333 and coord != 1.0015625:
-                        print(box)
-                        count += 1
-                        continue
-
-    print(count)"""
-
     retrieve_splits("caltech_split699")
