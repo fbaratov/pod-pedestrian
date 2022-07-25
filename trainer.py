@@ -30,8 +30,8 @@ def default_ssd_parameters():
     return optimizer, loss, metrics
 
 
-def init_ssd(prob=0.3):
-    ssd = SSD300_dropout(num_classes=len(class_names), base_weights='VGG', head_weights=None, prob=prob)
+def init_ssd(rate=0.3):
+    ssd = SSD300_dropout(num_classes=len(class_names), base_weights='VGG', head_weights=None, prob=rate)
 
     optimizer, loss, metrics = default_ssd_parameters()
 
@@ -46,7 +46,7 @@ def make_deterministic(model):
     :param model: SSD300-Dropout model.
     :returns: Deterministic SSD300-Dropout model
     """
-    det_model = init_ssd(0)
+    det_model = init_ssd(rate=0)
     det_model.set_weights(model.get_weights())
     return det_model
 
