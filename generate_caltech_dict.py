@@ -14,9 +14,9 @@ import numpy as np
 class_labels = {
     "background": 0,
     "person": 1,
-    "person-fa": 2,
-    "person?": 3,
-    "people": 4
+#    "person-fa": 2,
+#    "person?": 3,
+    "people": 2
 }
 
 class_names = list(class_labels.keys())

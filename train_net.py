@@ -1,16 +1,20 @@
 from keras.callbacks import EarlyStopping
+
+from prep_dataset import retrieve_splits
 from trainer import *
 from generate_caltech_dict import class_labels, class_names
 
 
-def train_net(epochs=10, rate=0.3):
+def train_net(model, split_dir, save_dir, epochs=10):
     """
     Takes care of training, evaluating, and displaying network results.
+    :param save_dir:
+    :param model: Model directory
+    :param split_dir: Directory from which to retrieve data splits.
     :param epochs: Number of epochs to train for.
-    :param rate: Model dropout rate.
     """
 
-    model = init_ssd(rate=0.3)
+    d_train, d_val, _ = retrieve_splits(split_dir)
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
@@ -20,9 +24,13 @@ def train_net(epochs=10, rate=0.3):
                         restore_best_weights=True)
           ]
 
-    # train model and plot loss
+    # train model and plot loss, save figure
     hist = train_model(model, d_train, d_val, save_dir, callbacks=cb, epochs=epochs)
 
 
 if __name__ == "__main__":
-    train_net(epochs=10, rate=0.3)
+    model = init_ssd(0.3)
+    split_dir = "pickle/caltech_split699"
+    save_dir = "models/caltech_model_0"
+
+    train_net(model, split_dir, save_dir, epochs=20)

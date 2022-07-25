@@ -23,7 +23,7 @@ def default_ssd_parameters():
     optimizer = SGD(learning_rate=0.001,
                     momentum=0.6)
 
-    loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.0, max_num_negatives=16)
+    loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.5, max_num_negatives=16)
     metrics = {'boxes': [loss.localization,
                          loss.positive_classification,
                          loss.negative_classification]}
@@ -75,6 +75,9 @@ def train_model(model, d_train, d_val, save_dir, callbacks=None, epochs=10):
     Trains model on given data and saves it.
     callbacks: List of callbacks to use
     epochs: Number of epochs to train for
+    d_train: Training dataset processor
+    d_val: Validation dataset processor
+    save_dir: Directory to save model in.
     """
 
     # check for callbacks

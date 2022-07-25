@@ -11,21 +11,18 @@ from sklearn.model_selection import train_test_split
 from generate_caltech_dict import class_labels, class_names, PICKLE_DIR
 
 
-def load_data(split_name):
+def load_data(split_dir):
     """
     Loads train/val/test splits from pickles
-    :param split_name: Name of split set.
+    :param split_dir: Directory of split set.
     :return: Train, validation, and test splits as lists of dictionaries
     """
+    if not exists(f"{split_dir}"):
+        raise FileNotFoundError(f"No split {split_dir} found!")
 
-    if not exists(f"{PICKLE_DIR}/dataset.p"):  # no dataset file available
-        raise FileNotFoundError("No dataset dictionary found! Please use generate_caltech_dict.py to create one.")
-    elif not exists(f"{PICKLE_DIR}/{split_name}"):
-        raise FileNotFoundError(f"No split {split_name} found!")
-
-    train_data = pickle.load(open(f"{PICKLE_DIR}/{split_name}/train.p", "rb"))
-    test_data = pickle.load(open(f"{PICKLE_DIR}/{split_name}/test.p", "rb"))
-    val_data = pickle.load(open(f"{PICKLE_DIR}/{split_name}/validation.p", "rb"))
+    train_data = pickle.load(open(f"{split_dir}/train.p", "rb"))
+    test_data = pickle.load(open(f"{split_dir}/test.p", "rb"))
+    val_data = pickle.load(open(f"{split_dir}/validation.p", "rb"))
 
     return train_data, val_data, test_data
 
@@ -76,7 +73,7 @@ def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
     if not isdir(split_dir):
         mkdir(split_dir)
 
-    data = pickle.load(open(f"{PICKLE_DIR}/{dataset_path}.p", "rb"))
+    data = pickle.load(open(f"{dataset_path}.p", "rb"))
 
     # split test/train
     train_data, test_data = train_test_split(data, test_size=test_size + val_size)
