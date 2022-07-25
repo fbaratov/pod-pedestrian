@@ -14,9 +14,9 @@ import numpy as np
 class_labels = {
     "background": 0,
     "person": 1,
-#    "person-fa": 2,
-#    "person?": 3,
-    "people": 2
+    "person-fa": 2,
+    "person?": 3,
+    "people": 4
 }
 
 class_names = list(class_labels.keys())
@@ -127,8 +127,8 @@ def prep_data(dataset_dir=DATASET_DIR):
 
                 if len(boxes) == 0 and set_count < 6:  # remove all frames with no boxes
                     boxes = negative_samples()
-                elif set_count >= 6 and len(boxes) == 0:
-                    continue
+                #elif set_count >= 6 and len(boxes) == 0:
+                #    continue
 
                 img_set.append({
                     "image": img_path,
@@ -141,7 +141,7 @@ def prep_data(dataset_dir=DATASET_DIR):
         data += img_set
         print(count)
         # save set
-        dump(img_set, open(f"{PICKLE_DIR}/by_set_AAA/{s}.p", "wb"))
+        dump(img_set, open(f"{PICKLE_DIR}/by_set_/{s}.p", "wb"))
 
     return data
 

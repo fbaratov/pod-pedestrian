@@ -23,7 +23,7 @@ def default_ssd_parameters():
     optimizer = SGD(learning_rate=0.001,
                     momentum=0.6)
 
-    loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.5, max_num_negatives=16)
+    loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.5, max_num_negatives=144)
     metrics = {'boxes': [loss.localization,
                          loss.positive_classification,
                          loss.negative_classification]}
@@ -51,7 +51,7 @@ def make_deterministic(model):
     return det_model
 
 
-def load_from_path(model_path=None):
+def load_from_path(model_path):
     """
     Loads SSD300 model with default model parameters.
     :param model_path: Path to model directory.
@@ -129,12 +129,12 @@ def predict_ssd(model, img_path, threshold=0.5, nms=0.5, samples=0, std_thresh=0
     return results
 
 
-def evaluate(model, dataset, threshold=0.45, nms=0.5, iou=0.5, samples=0, std_thresh=0):
+def evaluate(model, dataset, score_thresh=0.45, nms=0.5, iou=0.5, samples=0, std_thresh=0):
     """
     Evaluates model using test dataset.
     :param model: SSD model.
     :param dataset: Evaluation dataset. Dict with keys {'image', 'boxes'}
-    :param threshold: score threshold. Float between 0,1.
+    :param score_thresh: score threshold. Float between 0,1.
     :param nms: NMS threshold. Float between 0,1.
     :param iou: IoU threshold for MAP evaluation. Float between 0,1.
     :param samples: Number of samples to take from model. Used for stochastic models. Int.
@@ -147,10 +147,10 @@ def evaluate(model, dataset, threshold=0.45, nms=0.5, iou=0.5, samples=0, std_th
     labels = class_labels
 
     if samples > 1:  # stochastic case
-        detector = StochasticDetectSingleShot(model, names, threshold, nms, draw=False, samples=samples,
+        detector = StochasticDetectSingleShot(model, names, score_thresh, nms, draw=False, samples=samples,
                                               std_thresh=std_thresh)
     else:  # deterministic case
-        detector = DetectSingleShot(model, names, threshold, nms, draw=False)
+        detector = DetectSingleShot(model, names, score_thresh, nms, draw=False)
 
     meanAP = evaluateMAP(detector, dataset, labels, iou_thresh=iou)
 
@@ -165,7 +165,7 @@ def save_image(img, img_name, save_dir):
     imwrite(f"{save_dir}/{img_name}", img)
 
 
-def draw_predictions(draw_set, show_results=True, save_dir=False, display_std=True):
+def draw_predictions(draw_set, show_results=True, save_dir=False, display_std=False):
     """
     Draw a set of predictions.
     :param draw_set: Set of predictions to draw.

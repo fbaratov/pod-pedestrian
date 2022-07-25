@@ -115,4 +115,5 @@ def retrieve_splits(split_name, batch_size=16):
 
 
 if __name__ == "__main__":
-    retrieve_splits("caltech_split699")
+    create_caltech_splits("pickle/caltech_split", "pickle/by_set_")
+    retrieve_splits("pickle/caltech_split")

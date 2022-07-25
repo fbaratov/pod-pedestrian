@@ -72,7 +72,7 @@ class NMSPerClassSampling(NonMaximumSuppressionPerClass):
 
 class STDFilter(Processor):
     def __init__(self, name=None, iou=0.85):
-        super(STDFilter).__init__(name=name)
+        super(STDFilter, self).__init__()
         self.name = name
         self.iou = iou
     
