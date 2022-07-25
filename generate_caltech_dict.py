@@ -1,7 +1,7 @@
 import os
 import random
 
-from json import dump
+from pickle import dump
 
 import numpy as np
 
