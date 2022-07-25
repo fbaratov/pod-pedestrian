@@ -1,6 +1,3 @@
-from copy import deepcopy
-
-import numpy as np
 from paz.abstract import SequentialProcessor
 import paz.processors as pr
 from paz.pipelines import DetectSingleShot

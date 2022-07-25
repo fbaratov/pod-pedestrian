@@ -72,9 +72,10 @@ class NMSPerClassSampling(NonMaximumSuppressionPerClass):
 
 class STDFilter(Processor):
     def __init__(self, name=None, iou=0.85):
+        super(STDFilter).__init__(name=name)
         self.name = name
         self.iou = iou
-
+    
     def call(self, means, stds):
         filtered_means, filtered_stds = [], []
         for m, s in zip(means, stds):

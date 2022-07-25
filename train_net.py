@@ -1,9 +1,4 @@
 from keras.callbacks import EarlyStopping
-from matplotlib import pyplot as plt
-from paz.models import SSD300
-
-from prep_dataset import retrieve_splits
-from ssd_baseline import SSD300_baseline
 from trainer import *
 from generate_caltech_dict import class_labels, class_names
 
