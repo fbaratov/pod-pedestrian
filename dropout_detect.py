@@ -22,10 +22,12 @@ class StochasticDetectSingleShot(DetectSingleShot):
 
     def __init__(self, model, class_names, score_thresh, nms_thresh,
                  mean=pr.BGR_IMAGENET_MEAN, variances=[0.1, 0.1, 0.2, 0.2],
-                 draw=True, filter_std=False):
+                 draw=True, samples=5, std_thresh=0):
 
         super(StochasticDetectSingleShot, self).__init__(model, class_names, score_thresh, nms_thresh,
                                                          mean, variances, draw)
+        self.samples = samples
+        self.std_thresh = std_thresh
 
         # construct postprocessor
         decode = SequentialProcessor([
@@ -45,20 +47,16 @@ class StochasticDetectSingleShot(DetectSingleShot):
             # filter boxes
             pr.ControlMap(filter_boxes, intro_indices=[0], outro_indices=[0]),
             pr.ControlMap(filter_boxes, intro_indices=[1], outro_indices=[1]),
+            pr.ControlMap(STDFilter(iou=std_thresh), intro_indices=[0, 1], outro_indices=[0, 1])
         ])
-
-        if filter_std:
-            std_filter = STDFilter(iou=0.75)
-            std_filter = pr.ControlMap(std_filter, intro_indices=[0, 1], outro_indices=[0, 1])
-            postprocessing.processors.append(std_filter)
 
         # create predictor and output wrap
         self.predict = PredictBoxesSampling(self.model, self.predict.preprocess, postprocessing)
         self.wrap = pr.WrapOutput(['image', 'boxes2D', 'std'])
 
-    def call(self, image, k=5):
+    def call(self, image):
         # make predictions
-        bbox_means_norm, bbox_stds_norm = self.predict(image, k)
+        bbox_means_norm, bbox_stds_norm = self.predict(image, self.samples)
 
         # denormalize boxes and add to list
         box_means = []

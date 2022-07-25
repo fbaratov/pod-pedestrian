@@ -12,7 +12,7 @@ def test_baseline(model_name="dropout_model_full_0", split_name="full_set", k=10
 
     # generate predictions
     if show_results or save_results:
-        trainer.draw_results(k, show_truths, score_thresh, nms, show_results, save_results)
+        trainer.draw_predictions(k, show_truths, score_thresh, nms, show_results, save_results)
 
     if eval_map:
         map_score = trainer.evaluate(score_thresh, nms)
@@ -25,7 +25,7 @@ def test_dropout(model_name="dropout_model_full_0", split_name="full_set", k=100
 
     # generate predictions
     if show_results or save_results:
-        trainer.draw_results(k, show_truths, score_thresh, nms, show_results, save_results)
+        trainer.draw_predictions(k, show_truths, score_thresh, nms, show_results, save_results)
 
     if eval_map:
         map_score = trainer.evaluate(score_thresh, nms)
@@ -59,8 +59,8 @@ def compare_models(model0, model1, split_name, k=100, show_truths=True, score_th
 
     # generate predictions
     if show_results or save_results:
-        trainer0.draw_results(k, show_truths, score_thresh, nms, show_results, save_results, draw_set=predict_sample)
-        trainer1.draw_results(k, show_truths, score_thresh, nms, show_results, save_results, draw_set=predict_sample)
+        trainer0.draw_predictions(k, show_truths, score_thresh, nms, show_results, save_results, draw_set=predict_sample)
+        trainer1.draw_predictions(k, show_truths, score_thresh, nms, show_results, save_results, draw_set=predict_sample)
 
 
 
