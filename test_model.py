@@ -1,11 +1,13 @@
 from random import sample
 
+import numpy as np
+
 from prep_dataset import retrieve_splits
 from trainer import *
 import argparse
 
 
-def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=0, std_thresh=0):
+def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=0, std_thresh=0.):
 
     if model_type == 'deterministic':
         model = make_deterministic(model)
@@ -42,6 +44,10 @@ if __name__ == "__main__":
     a = parser.parse_args()"""
 
     _, _, test_set = retrieve_splits("pickle/all_classes_70_15_15")
-    model = load_from_path("models/model_full_0")
+    for i, d in enumerate(test_set):
+        for j, b in enumerate(d['boxes']):
+            d['boxes'][j] = np.array([b[0] * 640, b[1] * 480, b[2] * 640, b[3] * 480, b[4]])
 
-    evaluate_model_map("deterministic", model, test_set, score_thresh=.5, nms=.45, iou=0.5)
+    model = load_from_path("models/dropout_model_full_0")
+
+    evaluate_model_map("stochastic", model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=5, std_thresh=0.75)

@@ -99,7 +99,7 @@ def retrieve_splits(split_name, batch_size=16):
     # create processor
     prior_boxes = create_prior_boxes('VOC')
 
-    train_processor = AugmentDetection(prior_boxes, split=pr.TRAIN, num_classes=len(class_names), size=300,
+    train_processor = AugmentDetection(prior_boxes, split=pr.VAL, num_classes=len(class_names), size=300,
                                        mean=None, IOU=.5,
                                        variances=[0.1, 0.1, 0.2, 0.2])
     val_processor = AugmentDetection(prior_boxes, split=pr.VAL, num_classes=len(class_names), size=300,

@@ -80,8 +80,8 @@ def negative_samples():
     boxes = []
 
     for _ in range(9): # roughly 1 negative image for each positive box, so add 9 boxes to uphold 3 neg/pos box ratio
-        x = [random.uniform(0, 1) for c in range(2)]
-        y = [random.uniform(0, 1) for c in range(2)]
+        x = [random.uniform(0, 1) for _ in range(2)]
+        y = [random.uniform(0, 1) for _ in range(2)]
         x_min = min(x)
         x_max = max(x)
         y_min = min(y)
@@ -135,7 +135,7 @@ def prep_data(dataset_dir=DATASET_DIR):
                     "boxes": boxes
                 })
 
-                set_count += 1
+        set_count += 1
 
         # append to full set
         data += img_set
