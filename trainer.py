@@ -90,7 +90,7 @@ def train_model(model, d_train, d_val, save_dir, callbacks=None, epochs=10):
     # save model params and mark as trained
     model.save(save_dir)
 
-    with open(f'train.json', 'w') as fp:
+    with open(f'{save_dir}/train.json', 'w') as fp:
         json.dump(history, fp)
 
     return history
