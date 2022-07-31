@@ -99,7 +99,7 @@ def retrieve_splits(split_name, batch_size=16):
     # create processor
     prior_boxes = create_prior_boxes('VOC')
 
-    train_processor = AugmentDetection(prior_boxes, split=pr.VAL, num_classes=len(class_names), size=300,
+    train_processor = AugmentDetection(prior_boxes, split=pr.TRAIN, num_classes=len(class_names), size=300,
                                        mean=None, IOU=.5,
                                        variances=[0.1, 0.1, 0.2, 0.2])
     val_processor = AugmentDetection(prior_boxes, split=pr.VAL, num_classes=len(class_names), size=300,
@@ -115,5 +115,5 @@ def retrieve_splits(split_name, batch_size=16):
 
 
 if __name__ == "__main__":
-    create_caltech_splits("pickle/caltech_split", "pickle/by_set_")
-    retrieve_splits("pickle/caltech_split")
+    #create_caltech_splits("pickle/caltech_split", "pickle/by_settt")
+    retrieve_splits("pickle/all_classes_70_15_15")

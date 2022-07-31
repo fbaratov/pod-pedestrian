@@ -18,7 +18,7 @@ def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, io
     else:
         raise ValueError("Incorrect model type!")
 
-    print(results)
+    return results
 
 
 if __name__ == "__main__":
@@ -48,6 +48,12 @@ if __name__ == "__main__":
         for j, b in enumerate(d['boxes']):
             d['boxes'][j] = np.array([b[0] * 640, b[1] * 480, b[2] * 640, b[3] * 480, b[4]])
 
-    model = load_from_path("models/dropout_model_full_0")
+    model = load_from_path("models/model_1")
 
-    evaluate_model_map("stochastic", model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=5, std_thresh=0.75)
+    deterministic = evaluate_model_map("deterministic", model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=5, std_thresh=0)
+    stochastic = evaluate_model_map("stochastic", model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=5, std_thresh=0)
+    sto_filtered = evaluate_model_map("stochastic", model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=5, std_thresh=0.85)
+
+    print(deterministic)
+    print(stochastic)
+    print(sto_filtered)

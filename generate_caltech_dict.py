@@ -22,7 +22,7 @@ class_labels = {
 class_names = list(class_labels.keys())
 
 PICKLE_DIR = "pickle"
-DATASET_DIR = "C:/Users/Farrukh/Documents/.data/CALTECH_PEDESTRIAN"
+DATASET_DIR = "CALTECH_PEDESTRIAN"
 
 count = {
     "background": 0,
@@ -114,6 +114,7 @@ def prep_data(dataset_dir=DATASET_DIR):
         for vdir in os.listdir(f"{annot_dir}/{s}"):
             print(f"  {vdir}")
             for annot_file in os.listdir(f"{annot_dir}/{s}/{vdir}"):
+
                 num = annot_file[1:-4]
 
                 # the image/annotation paths are not following the format due to different scripts used for images and
@@ -125,10 +126,8 @@ def prep_data(dataset_dir=DATASET_DIR):
                 # extract boxes
                 boxes = extract_box_caltech(annot_path)
 
-                if len(boxes) == 0 and set_count < 6:  # remove all frames with no boxes
-                    boxes = negative_samples()
-                #elif set_count >= 6 and len(boxes) == 0:
-                #    continue
+                if len(boxes) == 0:
+                    continue
 
                 img_set.append({
                     "image": img_path,
@@ -141,7 +140,7 @@ def prep_data(dataset_dir=DATASET_DIR):
         data += img_set
         print(count)
         # save set
-        dump(img_set, open(f"{PICKLE_DIR}/by_set_/{s}.p", "wb"))
+        dump(img_set, open(f"{PICKLE_DIR}/by_set/{s}.p", "wb"))
 
     return data
 

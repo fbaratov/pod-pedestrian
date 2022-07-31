@@ -23,7 +23,7 @@ def default_ssd_parameters():
     optimizer = SGD(learning_rate=0.001,
                     momentum=0.6)
 
-    loss = MultiBoxLoss(neg_pos_ratio=3, alpha=1.5, max_num_negatives=144)
+    loss = MultiBoxLoss(alpha=1.0)
     metrics = {'boxes': [loss.localization,
                          loss.positive_classification,
                          loss.negative_classification]}
@@ -91,7 +91,7 @@ def train_model(model, d_train, d_val, save_dir, callbacks=None, epochs=10):
     model.save(save_dir)
 
     with open(f'{save_dir}/train.json', 'w') as fp:
-        json.dump(history, fp)
+        json.dump(history.history, fp)
 
     return history
 

@@ -1,4 +1,4 @@
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.callbacks import EarlyStopping
 
 from prep_dataset import retrieve_splits
 from trainer import *
@@ -18,21 +18,19 @@ def train_net(model, split_dir, save_dir, epochs=10):
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
-                        patience=5,
-                        min_delta=0.2,
+                        patience=15,
+                        min_delta=0.02,
                         verbose=1,
                         restore_best_weights=True),
-          ModelCheckpoint(f"models/checkpoint/model.h5", save_weights_only=False),
           ]
 
 
     # train model and plot loss, save figure
     hist = train_model(model, d_train, d_val, save_dir, callbacks=cb, epochs=epochs)
 
-
 if __name__ == "__main__":
     model = init_ssd(0.3)
-    split_dir = "pickle/caltech_split"
-    save_dir = "models/caltech_model_1"
+    split_dir = "pickle/all_classes_70_15_15"
+    save_dir = "models/model_1"
 
-    train_net(model, split_dir, save_dir, epochs=10)
+    train_net(model, split_dir, save_dir, epochs=30)
