@@ -1,14 +1,26 @@
-from random import sample
-
 import numpy as np
 
 from prep_dataset import retrieve_splits
 from trainer import *
-import argparse
 
 
 def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=0, std_thresh=0.):
+    """
+    Function for evaluating model mAP on test set.
 
+    # Arguments
+        model_type: Model type. "stochastic" or "deterministic".
+        model: PAZ SSD model or variant.
+        test_set: Set on which to evaluate mAP. Dict with keys "images" and "boxes".
+        score_thresh: Prediction confidence threshold. Float, [0,1].
+        nms: NMS IoU threshold. Float, [0,1].
+        iou: Match IoU threshold. Float, [0,1].
+        samples: Number of samples to make for stochastic model. Int.
+        std_thresh: Mean box and STD-adjusted box IoU threshold. Float, [0,1].
+
+    Returns:
+
+    """
     if model_type == 'deterministic':
         model = make_deterministic(model)
         results = evaluate(model, test_set, score_thresh=score_thresh, nms=nms, iou=iou, samples=0)
@@ -22,27 +34,6 @@ def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, io
 
 
 if __name__ == "__main__":
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('model_type', type=str, help='model type, either \'deterministic\', \'stochastic\'')
-    parser.add_argument('model_path', type=str, help='model directory path')
-    parser.add_argument('--split_path', type=str, help='test split directory path')
-    parser.add_argument('--score_threshold', type=float, help='score threshold', default=0.3)
-    parser.add_argument('--nms', type=float, help='non-maximum suppression threshold', default=0.6)
-    parser.add_argument('--map', type=bool, help='if True, evaluates model mean average precision (mAP)', default=False)
-    parser.add_argument('--k', type=int, help='number of results to show', default=100)
-    parser.add_argument('--show_truths', type=bool, help='if True, draws ground truths on results', default=False)
-    parser.add_argument('--show_results', type=bool, help='if True, displays examples of predictions', default=False)
-    parser.add_argument('--save_results', type=bool, help='if True, saves images to predictions folder', default=False)
-    parser.add_argument('--compare', type=bool,
-                        help='if True, compares two provided models by evaluating them on the same set', default=False)
-    parser.add_argument('--second_model_type', type=str,
-                        help='second model type for comparison, either \'baseline\', \'dropout\'', default=None)
-    parser.add_argument('--second_model_name', type=str, help='second model directory name for comparison',
-                        default=None)
-
-    a = parser.parse_args()"""
-
     _, _, test_set = retrieve_splits("pickle/all_classes_70_15_15")
     for i, d in enumerate(test_set):
         for j, b in enumerate(d['boxes']):
