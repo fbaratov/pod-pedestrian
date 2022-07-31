@@ -8,7 +8,7 @@ def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, io
     """
     Function for evaluating model mAP on test set.
 
-    # Arguments
+    Args:
         model_type: Model type. "stochastic" or "deterministic".
         model: PAZ SSD model or variant.
         test_set: Set on which to evaluate mAP. Dict with keys "images" and "boxes".
@@ -19,7 +19,7 @@ def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, io
         std_thresh: Mean box and STD-adjusted box IoU threshold. Float, [0,1].
 
     Returns:
-
+        Dictionary of mAP evaluation results
     """
     if model_type == 'deterministic':
         model = make_deterministic(model)

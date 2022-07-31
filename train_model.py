@@ -8,7 +8,7 @@ def train_net(model, split_dir, save_dir, epochs=10):
     """
     Takes care of training, evaluating, and displaying network results.
 
-    # Arguments
+    Args:
         save_dir: Directory to save model in.
         model: PAZ SSD model.
         split_dir: Directory where data splits are located.
