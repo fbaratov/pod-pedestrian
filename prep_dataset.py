@@ -12,10 +12,13 @@ from generate_caltech_dict import class_labels, class_names, PICKLE_DIR
 
 
 def load_data(split_dir):
-    """
-    Loads train/val/test splits from pickles
-    :param split_dir: Directory of split set.
-    :return: Train, validation, and test splits as lists of dictionaries
+    """ Loads train/val/test splits from pickles
+
+    # Arguments
+        split_dir: Directory of split set.
+
+    Returns
+        Train, validation, and test splits as lists of dictionaries containing keys 'image' and 'boxes'.
     """
     if not exists(f"{split_dir}"):
         raise FileNotFoundError(f"No split {split_dir} found!")
@@ -27,47 +30,14 @@ def load_data(split_dir):
     return train_data, val_data, test_data
 
 
-def create_caltech_splits(split_dir, caltech_dir):
-    """
-    Create data splits based on caltech sets.
-    :param split_dir: Directory to save splits in
-    :param caltech_dir: Directory with caltech data sets.
-    :return:
-    """
-    if not isdir(split_dir):
-        mkdir(split_dir)
-
-    train_sets = ["set00.p", "set01.p", "set02.p", "set03.p", "set04.p", "set05.p"]
-    test_sets = ["set06.p", "set07.p", "set08.p", "set09.p"]
-    val_sets = ["set10.p"]
-
-    train_data, test_data, val_data = [], [], []
-
-    for fname in train_sets:
-        tset = pickle.load(open(f"{caltech_dir}/{fname}", "rb"))
-        train_data += tset
-
-    for fname in test_sets:
-        tset = pickle.load(open(f"{caltech_dir}/{fname}", "rb"))
-        test_data += tset
-
-    for fname in val_sets:
-        vset = pickle.load(open(f"{caltech_dir}/{fname}", "rb"))
-        val_data += vset
-
-    pickle.dump(train_data, open(f"{split_dir}/train.p", "wb"))
-    pickle.dump(test_data, open(f"{split_dir}/test.p", "wb"))
-    pickle.dump(val_data, open(f"{split_dir}/validation.p", "wb"))
-
-
 def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
-    """
-    Create data splits.
-    :param dataset_path:
-    :param split_dir:
-    :param test_size:
-    :param val_size:
-    :return:
+    """ Create data splits by shuffling dataset into train,test,validation sets.
+
+    # Arguments
+        dataset_path: Path to pickle containing list of dictionaries with keys 'images' and 'boxes'.
+        split_dir: Directory in which to save dataset splits.
+        test_size: Size of test split. Float between [0,1].
+        val_size: Size of validation split. Float between [0,1].
     """
 
     if not isdir(split_dir):
@@ -88,11 +58,14 @@ def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
 
 
 def retrieve_splits(split_name, batch_size=16):
-    """
-    Creates a processor from a filepath/bbox dictionary that can be used to train a model.
-    :param split_name: Name of dataset splits to retrieve.
-    :param batch_size: Input batch size.
-    :return: Train and validation splits as processors, test split as dictionary .
+    """Creates a processor from a filepath/bbox dictionary that can be used to train a model.
+
+    # Arguments
+        split_name: Directory in which splits are located. String.
+        batch_size: Input batch size. Int.
+
+    Returns
+        Train and validation splits as PAZ processors, test split as dictionary with keys 'images' and 'boxes.
     """
     train_data, val_data, test_data = load_data(split_name)
 
@@ -115,5 +88,4 @@ def retrieve_splits(split_name, batch_size=16):
 
 
 if __name__ == "__main__":
-    #create_caltech_splits("pickle/caltech_split", "pickle/by_settt")
     retrieve_splits("pickle/all_classes_70_15_15")

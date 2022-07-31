@@ -36,10 +36,14 @@ count = {
 def extract_box_caltech(file, width=640, height=480):
     """
     Extracts bounding boxes from the provided file.
-    :param file: path to annotations file.
-    :param width: image width. default is 640px (caltech pedestrian dataset size)
-    :param height: image height. default is 480px (caltech pedestrian dataset size)
-    :returns list of bounding boxes.
+
+    # Arguments
+        file: path to annotations file. String.
+        width: image width. default is 640px (caltech pedestrian dataset size). Int
+        height: image height. default is 480px (caltech pedestrian dataset size). Int
+
+    Returns
+        List of bbox coordinates and their labels.
     """
     model_labels = class_labels
 
@@ -76,27 +80,15 @@ def extract_box_caltech(file, width=640, height=480):
     return np.array(box_data)
 
 
-def negative_samples():
-    boxes = []
-
-    for _ in range(9): # roughly 1 negative image for each positive box, so add 9 boxes to uphold 3 neg/pos box ratio
-        x = [random.uniform(0, 1) for _ in range(2)]
-        y = [random.uniform(0, 1) for _ in range(2)]
-        x_min = min(x)
-        x_max = max(x)
-        y_min = min(y)
-        y_max = max(y)
-
-        boxes.append([x_min, y_min, x_max, y_max, class_labels['background']])
-
-    return np.array(boxes)
-
-
 def prep_data(dataset_dir=DATASET_DIR):
     """
     Prepares data by converting to required representations and formatting as a list
-    :param dataset_dir: Path to the dataset directory.
-    :return: Dictionary with image filepaths and bounding boxes
+
+    # Arguments
+        dataset_dir: Path to the dataset directory.
+
+    Returns
+        Dictionary with labels 'image' and 'boxes', containing image filepaths and corresponding bboxes.
     """
     # useful directories
     img_dir = f"{dataset_dir}/images"
