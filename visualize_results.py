@@ -1,7 +1,7 @@
-from random import random, sample
+from random import sample
 
-from prep_dataset import retrieve_splits
-from trainer import *
+from backend.dataset_processing.prep_dataset import retrieve_splits
+from backend.model_utils import *
 
 
 def visualize_predictions(model_type, model, pred_set, save_dir=None, show_results=True, score_thresh=.5, nms=.45,

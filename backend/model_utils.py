@@ -14,9 +14,9 @@ from os.path import exists
 from paz.evaluation import evaluateMAP
 from paz.pipelines.detection import DetectSingleShot
 from generate_caltech_dict import class_labels, class_names
-from dropout_detect import StochasticDetectSingleShot
-from ssd_dropout import SSD300_dropout
-from visualize_dropout import DrawBoxesDropout
+from backend.dropout.dropout_pipeline import StochasticDetectSingleShot
+from backend.dropout.ssd_dropout import SSD300_dropout
+from backend.dropout.dropout_draw import DrawBoxesDropout
 
 
 def default_ssd_parameters():

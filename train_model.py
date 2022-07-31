@@ -1,8 +1,7 @@
 from keras.callbacks import EarlyStopping
 
-from prep_dataset import retrieve_splits
-from trainer import *
-from generate_caltech_dict import class_labels, class_names
+from backend.dataset_processing.prep_dataset import retrieve_splits
+from backend.model_utils import *
 
 
 def train_net(model, split_dir, save_dir, epochs=10):

@@ -21,8 +21,8 @@ class_labels = {
 
 class_names = list(class_labels.keys())
 
-PICKLE_DIR = "pickle"
-DATASET_DIR = "CALTECH_PEDESTRIAN"
+PICKLE_DIR = "../../pickle"
+DATASET_DIR = "../../CALTECH_PEDESTRIAN"
 
 count = {
     "background": 0,

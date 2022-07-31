@@ -1,7 +1,7 @@
 import numpy as np
 
-from prep_dataset import retrieve_splits
-from trainer import *
+from backend.dataset_processing.prep_dataset import retrieve_splits
+from backend.model_utils import *
 
 
 def evaluate_model_map(model_type, model, test_set, score_thresh=.5, nms=.45, iou=0.5, samples=0, std_thresh=0.):
