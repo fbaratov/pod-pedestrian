@@ -4,7 +4,8 @@ from paz.processors import DrawBoxes2D
 
 
 class DrawBoxesDropout(DrawBoxes2D):
-    """Draws bounding boxes from Boxes2D messages.
+    """Draws bounding boxes from Boxes2D messages. Modified for models that output mean boxes and
+    uncertainty-adjusted boxes. Based on PAZ DrawBoxes2D processor.
 
     # Arguments
         class_names: List of strings.

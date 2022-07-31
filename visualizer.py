@@ -6,6 +6,23 @@ from trainer import *
 
 def visualize_predictions(model_type, model, pred_set, save_dir=None, show_results=True, score_thresh=.5, nms=.45,
                           samples=0, std_thresh=0.):
+    """
+    Make model predictions and visualize them.
+
+    Args:
+        model_type: Model type. "deterministic" or "stochastic".
+        model: PAZ SSD Model or variant.
+        pred_set: Filepaths of images to make predictions on. List of image filepaths.
+        save_dir: String or None. Directory in which to save predictions.
+        show_results: Whether to display image predictions. Boolean.
+        score_thresh: Prediction confidence threshold. Float, [0,1].
+        nms: Non-maximum suppression IoU threshold. Float, [0,1].
+        samples: Int. Number of samples to take for stochastic model.
+        std_thresh: Mean box and STD-adjusted box IoU. Float, [0,1].
+
+    Returns:
+
+    """
     if model_type == "deterministic":
         model = make_deterministic(model)
 
