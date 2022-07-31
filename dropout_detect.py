@@ -6,7 +6,7 @@ from dropout_processors import *
 
 
 class StochasticDetectSingleShot(DetectSingleShot):
-    """Single-shot object detection prediction.
+    """PAZ DetectSingleShot class modified to be used with stochastic models.
 
     # Arguments
         model: Keras model.
@@ -15,6 +15,9 @@ class StochasticDetectSingleShot(DetectSingleShot):
         nms_thresh: Float between [0, 1].
         mean: List of three elements indicating the per channel mean.
         draw: Boolean. If ``True`` prediction are drawn in the returned image.
+        samples: Number of times the network will be sampled. Int.
+        std_thresh: Threshold for minimum std-adjusted box area / mean box area. All predictions with IoU lower than the
+        threshold are removed. Float in range [0,1].
     """
 
     def __init__(self, model, class_names, score_thresh, nms_thresh,

@@ -5,7 +5,8 @@ from paz.processors import NonMaximumSuppressionPerClass, Predict
 
 
 def nms_per_class_sampling(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01, top_k=200):
-    """Applies non-maximum-suppression per class.
+    """Applies non-maximum-suppression per class based on mean boxes for a stochastic model. Utilized by
+    StochasticDetectSingleShot class. Based on nms_per_class function.
     # Arguments
         box_data: Numpy array of shape `(num_prior_boxes, 4 + num_classes)`.
         nsm_thresh: Float. Non-maximum suppression threshold.
@@ -58,7 +59,7 @@ def nms_per_class_sampling(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01
 
 
 class NMSPerClassSampling(NonMaximumSuppressionPerClass):
-    """Applies non maximum suppression for dropout predictions and indices in vector.
+    """Applies non maximum suppression for stochastic model predictions and indices in vector.
 
     # Arguments
         nms_thresh: Float between [0, 1].
@@ -71,6 +72,12 @@ class NMSPerClassSampling(NonMaximumSuppressionPerClass):
 
 
 class STDFilter(Processor):
+    """ Filters mean and std box prediction pairs based on uncertainty.
+
+    # Arguments
+        iou: Minimum mean box area / std box area. Any predictions with an IoU lower than the threshold are removed. Float in range [0,1].
+    """
+
     def __init__(self, name=None, iou=0.85):
         super(STDFilter, self).__init__()
         self.name = name
@@ -97,6 +104,10 @@ class STDFilter(Processor):
 
 
 class CreateSTDBoxes(Processor):
+    """Creates standard deviation-adjusted boxes from mean boxes and their standard deviations/variances.
+
+    """
+
     def call(self, means, stds):
         std_boxes = []
 
