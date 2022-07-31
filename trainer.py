@@ -131,16 +131,20 @@ def predict_ssd(model, img_path, threshold=0.5, nms=0.5, samples=0, std_thresh=0
 
 def evaluate(model, dataset, score_thresh=0.45, nms=0.5, iou=0.5, samples=0, std_thresh=0):
     """
-    Evaluates model using test dataset.
-    :param model: SSD model.
-    :param dataset: Evaluation dataset. Dict with keys {'image', 'boxes'}
-    :param score_thresh: score threshold. Float between 0,1.
-    :param nms: NMS threshold. Float between 0,1.
-    :param iou: IoU threshold for MAP evaluation. Float between 0,1.
-    :param samples: Number of samples to take from model. Used for stochastic models. Int.
-    :param std_thresh: For stochastic model. Min IoU of mean box/std box per prediction. Used to filter boxes based on
+    Evaluates PAZ SSD model using test dataset.
+
+    # Arguments
+        model: SSD model.
+        dataset: Evaluation dataset. Dict with keys {'image', 'boxes'}
+        score_thresh: score threshold. Float between 0,1.
+        nms: NMS threshold. Float between 0,1.
+        iou: IoU threshold for MAP evaluation. Float between 0,1.
+        samples: Number of samples to take from model. Used for stochastic models. Int.
+        std_thresh: For stochastic model. Min IoU of mean box/std box per prediction. Used to filter boxes based on
         uncertainty.
-    :return: Dict with keys ['image','boxes2D'] for deterministic model, ['image', 'boxes2D','std'] for stochastic.
+
+    Returns
+        Dict with keys ['image','boxes2D'] for deterministic model, ['image', 'boxes2D','std'] for stochastic.
     """
 
     names = class_names
@@ -158,6 +162,13 @@ def evaluate(model, dataset, score_thresh=0.45, nms=0.5, iou=0.5, samples=0, std
 
 
 def save_image(img, img_name, save_dir):
+    """ Saves image in given directory with given name.
+
+    # Arguments
+        img: OpenCV image.
+        img_name: Image save name.
+        save_dir: Image save directory.
+    """
     if not exists(save_dir):
         mkdir(save_dir)
 
@@ -166,12 +177,13 @@ def save_image(img, img_name, save_dir):
 
 
 def draw_predictions(draw_set, show_results=True, save_dir=False, display_std=False):
-    """
-    Draw a set of predictions.
-    :param draw_set: Set of predictions to draw.
-    :param save_dir: Filepath at which to save results. If None, results are not saved.
-    :param show_results: If True
-    :param display_std: If True, visualizes model uncertainty. predictions must be stochastic.
+    """Draw a set of predictions.
+
+    # Arguments
+        draw_set: Set of predictions to draw.
+        save_dir: Filepath at which to save results. If None, results are not saved.
+        show_results: If True
+        display_std: If True, visualizes model uncertainty. predictions must be stochastic.
     """
 
     # visualize all images that have bounding boxes

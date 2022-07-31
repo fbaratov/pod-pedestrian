@@ -8,10 +8,12 @@ from generate_caltech_dict import class_labels, class_names
 def train_net(model, split_dir, save_dir, epochs=10):
     """
     Takes care of training, evaluating, and displaying network results.
-    :param save_dir:
-    :param model: Model directory
-    :param split_dir: Directory from which to retrieve data splits.
-    :param epochs: Number of epochs to train for.
+
+    # Arguments
+        save_dir: Directory to save model in.
+        model: PAZ SSD model.
+        split_dir: Directory where data splits are located.
+        epochs: Number of epochs to train for. Int.
     """
 
     d_train, d_val, _ = retrieve_splits(split_dir)
@@ -24,9 +26,9 @@ def train_net(model, split_dir, save_dir, epochs=10):
                         restore_best_weights=True),
           ]
 
-
     # train model and plot loss, save figure
     hist = train_model(model, d_train, d_val, save_dir, callbacks=cb, epochs=epochs)
+
 
 if __name__ == "__main__":
     model = init_ssd(0.3)
