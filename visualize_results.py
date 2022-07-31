@@ -19,9 +19,6 @@ def visualize_predictions(model_type, model, pred_set, save_dir=None, show_resul
         nms: Non-maximum suppression IoU threshold. Float, [0,1].
         samples: Int. Number of samples to take for stochastic model.
         std_thresh: Mean box and STD-adjusted box IoU. Float, [0,1].
-
-    Returns:
-
     """
     if model_type == "deterministic":
         model = make_deterministic(model)

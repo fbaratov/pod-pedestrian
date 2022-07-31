@@ -13,13 +13,17 @@ from os.path import exists
 
 from paz.evaluation import evaluateMAP
 from paz.pipelines.detection import DetectSingleShot
-from generate_caltech_dict import class_labels, class_names
+from dataset_processing.generate_caltech_dict import class_labels, class_names
 from backend.dropout.dropout_pipeline import StochasticDetectSingleShot
 from backend.dropout.ssd_dropout import SSD300_dropout
 from backend.dropout.dropout_draw import DrawBoxesDropout
 
 
 def default_ssd_parameters():
+    """Initializes SSD parameters.
+
+    Returns: SGD optimizer, MultiBoxLoss, and loss metrics.
+    """
     optimizer = SGD(learning_rate=0.001,
                     momentum=0.6)
 
@@ -31,6 +35,14 @@ def default_ssd_parameters():
 
 
 def init_ssd(rate=0.3):
+    """Initializes SSD300 model using default parameters.
+
+    Args:
+        rate: Model dropout rate.
+
+    Returns:
+        Untrained SSD300 model.
+    """
     ssd = SSD300_dropout(num_classes=len(class_names), base_weights='VGG', head_weights=None, prob=rate)
 
     optimizer, loss, metrics = default_ssd_parameters()
@@ -41,10 +53,13 @@ def init_ssd(rate=0.3):
 
 
 def make_deterministic(model):
-    """
-    Initializes an SSD300-Dropout model with dropout rate 0 and copies weights of given model to it.
-    :param model: SSD300-Dropout model.
-    :returns: Deterministic SSD300-Dropout model
+    """Initializes an SSD300-Dropout model with dropout rate 0 and copies weights of given model to it.
+
+    Args:
+        model: SSD300-Dropout model.
+
+    Returns:
+        Deterministic SSD300-Dropout model
     """
     det_model = init_ssd(rate=0)
     det_model.set_weights(model.get_weights())
@@ -52,10 +67,13 @@ def make_deterministic(model):
 
 
 def load_from_path(model_path):
-    """
-    Loads SSD300 model with default model parameters.
-    :param model_path: Path to model directory.
-    :return: SSD300 model
+    """Loads SSD300 model with default model parameters.
+
+    Args:
+        model_path: Path to model directory.
+
+    Returns:
+        SSD300 model
     """
 
     optimizer, loss, metrics = default_ssd_parameters()
@@ -73,11 +91,17 @@ def load_from_path(model_path):
 def train_model(model, d_train, d_val, save_dir, callbacks=None, epochs=10):
     """
     Trains model on given data and saves it.
-    callbacks: List of callbacks to use
-    epochs: Number of epochs to train for
-    d_train: Training dataset processor
-    d_val: Validation dataset processor
-    save_dir: Directory to save model in.
+
+    Args:
+        model: Model to be trained.
+        callbacks: List of callbacks to use
+        epochs: Number of epochs to train for
+        d_train: Training dataset processor
+        d_val: Validation dataset processor
+        save_dir: Directory to save model in.
+
+    Returns:
+        History object containing model training history
     """
 
     # check for callbacks
@@ -99,14 +123,17 @@ def train_model(model, d_train, d_val, save_dir, callbacks=None, epochs=10):
 def predict_ssd(model, img_path, threshold=0.5, nms=0.5, samples=0, std_thresh=0):
     """
     Uses model to make a prediction given image filepaths.
-    :param model: SSD model
-    :param nms: NMS threshold
-    :param threshold: IoU threshold
-    :param img_path: Image filepaths. List.
-    :param samples: Number of samples to take from model. Used for stochastic models. Int.
-    :param std_thresh: For stochastic model. Min IoU of mean box/std box per prediction. Used to filter boxes based on
-        uncertainty.
-    :return: set of bbox predictions
+
+    Args:
+        model: SSD model
+        nms: NMS threshold
+        threshold: IoU threshold
+        img_path: Image filepaths. List.
+        samples: Number of samples to take from model. Used for stochastic models. Int.
+        std_thresh: For stochastic model. Min IoU of mean box/std box per prediction. Used to filter boxes based on uncertainty.
+
+    Returns:
+        Dictionary of bbox predictions per image.
     """
 
     names = class_names
@@ -133,7 +160,7 @@ def evaluate(model, dataset, score_thresh=0.45, nms=0.5, iou=0.5, samples=0, std
     """
     Evaluates PAZ SSD model using test dataset.
 
-    # Arguments
+    Args:
         model: SSD model.
         dataset: Evaluation dataset. Dict with keys {'image', 'boxes'}
         score_thresh: score threshold. Float between 0,1.
@@ -143,7 +170,7 @@ def evaluate(model, dataset, score_thresh=0.45, nms=0.5, iou=0.5, samples=0, std
         std_thresh: For stochastic model. Min IoU of mean box/std box per prediction. Used to filter boxes based on
         uncertainty.
 
-    Returns
+    Returns:
         Dict with keys ['image','boxes2D'] for deterministic model, ['image', 'boxes2D','std'] for stochastic.
     """
 
@@ -164,7 +191,7 @@ def evaluate(model, dataset, score_thresh=0.45, nms=0.5, iou=0.5, samples=0, std
 def save_image(img, img_name, save_dir):
     """ Saves image in given directory with given name.
 
-    # Arguments
+    Args:
         img: OpenCV image.
         img_name: Image save name.
         save_dir: Image save directory.
@@ -179,7 +206,7 @@ def save_image(img, img_name, save_dir):
 def draw_predictions(draw_set, show_results=True, save_dir=False, display_std=False):
     """Draw a set of predictions.
 
-    # Arguments
+    Args:
         draw_set: Set of predictions to draw.
         save_dir: Filepath at which to save results. If None, results are not saved.
         show_results: If True
