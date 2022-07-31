@@ -14,7 +14,7 @@ from generate_caltech_dict import class_labels, class_names, PICKLE_DIR
 def load_data(split_dir):
     """ Loads train/val/test splits from pickles
 
-    # Arguments
+    Args:
         split_dir: Directory of split set.
 
     Returns
@@ -33,7 +33,7 @@ def load_data(split_dir):
 def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
     """ Create data splits by shuffling dataset into train,test,validation sets.
 
-    # Arguments
+    Args:
         dataset_path: Path to pickle containing list of dictionaries with keys 'images' and 'boxes'.
         split_dir: Directory in which to save dataset splits.
         test_size: Size of test split. Float between [0,1].
@@ -60,7 +60,7 @@ def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
 def retrieve_splits(split_name, batch_size=16):
     """Creates a processor from a filepath/bbox dictionary that can be used to train a model.
 
-    # Arguments
+    Args:
         split_name: Directory in which splits are located. String.
         batch_size: Input batch size. Int.
 

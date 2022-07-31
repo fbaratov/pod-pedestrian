@@ -8,7 +8,7 @@ from dropout_processors import *
 class StochasticDetectSingleShot(DetectSingleShot):
     """PAZ DetectSingleShot class modified to be used with stochastic models.
 
-    # Arguments
+    Args:
         model: Keras model.
         class_names: List of strings indicating the class names.
         score_thresh: Float between [0, 1]

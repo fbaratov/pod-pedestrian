@@ -1,5 +1,4 @@
 import os
-import random
 
 from pickle import dump
 
@@ -37,7 +36,7 @@ def extract_box_caltech(file, width=640, height=480):
     """
     Extracts bounding boxes from the provided file.
 
-    # Arguments
+    Args:
         file: path to annotations file. String.
         width: image width. default is 640px (caltech pedestrian dataset size). Int
         height: image height. default is 480px (caltech pedestrian dataset size). Int
@@ -84,7 +83,7 @@ def prep_data(dataset_dir=DATASET_DIR):
     """
     Prepares data by converting to required representations and formatting as a list
 
-    # Arguments
+    Args:
         dataset_dir: Path to the dataset directory.
 
     Returns

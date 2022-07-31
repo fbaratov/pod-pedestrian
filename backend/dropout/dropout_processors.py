@@ -7,14 +7,15 @@ from paz.processors import NonMaximumSuppressionPerClass, Predict
 def nms_per_class_sampling(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01, top_k=200):
     """Applies non-maximum-suppression per class based on mean boxes for a stochastic model. Utilized by
     StochasticDetectSingleShot class. Based on nms_per_class function.
-    # Arguments
-        box_data: Numpy array of shape `(num_prior_boxes, 4 + num_classes)`.
-        nsm_thresh: Float. Non-maximum suppression threshold.
+    Args:
+        mean_data: Set of mean boxes. Numpy array of shape `(num_prior_boxes, 4 + num_classes)`.
+        std_data: Set of std-adjusted boxes. Numpy array of shape `(num_prior_boxes, 4 + num_classes)`.
+        nms_thresh: Float. Non-maximum suppression threshold.
         conf_thresh: Float. Filter scores with a lower confidence value before
             performing non-maximum supression.
         top_k: Integer. Maximum number of boxes per class outputted by nms.
 
-    Returns
+    Returns:
         Two numpy arrays of shape `(num_classes, top_k, 5)`.
     """
     decoded_means, class_predictions = mean_data[:, :4], mean_data[:, 4:]
@@ -59,11 +60,7 @@ def nms_per_class_sampling(mean_data, std_data, nms_thresh=.45, conf_thresh=0.01
 
 
 class NMSPerClassSampling(NonMaximumSuppressionPerClass):
-    """Applies non maximum suppression for stochastic model predictions and indices in vector.
-
-    # Arguments
-        nms_thresh: Float between [0, 1].
-        conf_thresh: Float between [0, 1].
+    """Applies non maximum suppression for stochastic model predictions based on mean boxes.
     """
 
     def call(self, mean_data, std_data):
@@ -74,7 +71,7 @@ class NMSPerClassSampling(NonMaximumSuppressionPerClass):
 class STDFilter(Processor):
     """ Filters mean and std box prediction pairs based on uncertainty.
 
-    # Arguments
+    Args:
         iou: Minimum mean box area / std box area. Any predictions with an IoU lower than the threshold are removed. Float in range [0,1].
     """
 

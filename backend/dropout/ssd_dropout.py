@@ -23,7 +23,8 @@ def SSD300_dropout(num_classes=21, base_weights='VOC', head_weights='VOC',
                    l2_loss=0.0005, return_base=False, trainable_base=True, prob=0.3):
     """Single-shot-multibox detector for 300x300x3 BGR input images with dropout included.
     Adapted from PAZ SSD300 implementation
-    # Arguments
+
+    Args:
         num_classes: Integer. Specifies the number of class labels.
         base_weights: String or None. If string should be a valid dataset name.
             Current valid datasets include `VOC` `FAT` and `VGG`.
