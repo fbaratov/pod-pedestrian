@@ -32,6 +32,7 @@ def load_data(split_dir):
 
 def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
     """ Create data splits by shuffling dataset into train,test,validation sets.
+    Can be used 
 
     Args:
         dataset_path: Path to pickle containing list of dictionaries with keys 'images' and 'boxes'.
@@ -57,17 +58,17 @@ def create_splits(dataset_path, split_dir, test_size=0.15, val_size=.15):
     pickle.dump(val_data, open(f"{split_dir}/validation.p", "wb"))
 
 
-def retrieve_splits(split_name, batch_size=16):
+def retrieve_splits(splir_dir, batch_size=16):
     """Creates a processor from a filepath/bbox dictionary that can be used to train a model.
 
     Args:
-        split_name: Directory in which splits are located. String.
+        split_dir: Directory in which splits are located. String.
         batch_size: Input batch size. Int.
 
     Returns
         Train and validation splits as PAZ processors, test split as dictionary with keys 'images' and 'boxes.
     """
-    train_data, val_data, test_data = load_data(split_name)
+    train_data, val_data, test_data = load_data(splir_dir)
 
     # create processor
     prior_boxes = create_prior_boxes('VOC')
@@ -85,7 +86,3 @@ def retrieve_splits(split_name, batch_size=16):
 
     print(f"train size: {len(train_data)}\ntest size: {len(test_data)}\nvalidation size: {len(val_data)}")
     return train_seq, val_seq, test_data
-
-
-if __name__ == "__main__":
-    retrieve_splits("pickle/all_classes_70_15_15")

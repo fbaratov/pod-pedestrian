@@ -15,3 +15,6 @@ The required environment can be installed via ``` conda install environment.yml 
 
 ## Model usage
 The simplest way to train and test the model is by using the ```train_model.py``` and ```test_model.py``` files in the root directory. 
+
+## Using custom datasets
+The provided code only supports the Caltech Pedestrian dataset in a specific format. However, if you wish to use a different dataset, please refer to the file located in ```backend/dataset_processing/prep_dataset.py```. The function ```load_data.py``` is responsible for loading the training, testing, and validation splits. Feel free to fiddle with it to load your data in the format that is required by PAZ.

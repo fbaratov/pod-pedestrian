@@ -4,7 +4,7 @@ from backend.dataset_processing.prep_dataset import retrieve_splits
 from backend.model_utils import *
 
 
-def train_net(model, split_dir, save_dir, epochs=10):
+def train_net(model, split_dir, save_dir, epochs=10, batch_size=16):
     """
     Takes care of training, evaluating, and displaying network results.
 
@@ -15,7 +15,7 @@ def train_net(model, split_dir, save_dir, epochs=10):
         epochs: Number of epochs to train for. Int.
     """
 
-    d_train, d_val, _ = retrieve_splits(split_dir)
+    d_train, d_val, _ = retrieve_splits(split_dir, batch_size=batch_size)
 
     # callbacks (passed to trainer.train)
     cb = [EarlyStopping(monitor='val_loss',
@@ -38,7 +38,8 @@ if __name__ == "__main__":
     args.add_argument('--save_dir', help="directory to which the model should be saved.")
     args.add_argument('--dropout_rate', help="model dropout rate. Set to 0. for no dropout.", default=0.3)
     args.add_argument('--epochs', help='number of epochs for which the model should be trained.', default=30)
+    args.add_argument('--batch_size', help='training batch size.', default=16)
 
     model = init_ssd(args.dropout_rate)
 
-    train_net(model, args.split_dir, args.save_dir, epochs=args.epochs)
+    train_net(model, args.split_dir, args.save_dir, epochs=args.epochs, batch_size=args.batch_size)
