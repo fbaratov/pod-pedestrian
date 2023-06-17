@@ -1,5 +1,5 @@
 from keras.callbacks import EarlyStopping
-
+import argparse
 from backend.dataset_processing.prep_dataset import retrieve_splits
 from backend.model_utils import *
 
@@ -30,8 +30,15 @@ def train_net(model, split_dir, save_dir, epochs=10):
 
 
 if __name__ == "__main__":
-    model = init_ssd(0.3)
-    split_dir = "pickle/all_classes_70_15_15"
-    save_dir = "models/model_1"
+    args = argparse.ArgumentParser(
+                    prog='Dropout SSD300 trainer',
+                    description='Trains the SSD300')
+    
+    args.add_argument('--split_dir', help='directory containing train/test/validation splits.')
+    args.add_argument('--save_dir', help="directory to which the model should be saved.")
+    args.add_argument('--dropout_rate', help="model dropout rate. Set to 0. for no dropout.", default=0.3)
+    args.add_argument('--epochs', help='number of epochs for which the model should be trained.', default=30)
 
-    train_net(model, split_dir, save_dir, epochs=30)
+    model = init_ssd(args.dropout_rate)
+
+    train_net(model, args.split_dir, args.save_dir, epochs=args.epochs)

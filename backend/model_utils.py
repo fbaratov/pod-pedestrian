@@ -35,7 +35,7 @@ def default_ssd_parameters():
 
 
 def init_ssd(rate=0.3):
-    """Initializes SSD300 model using default parameters.
+    """Initializes SSD300 dropout model using default parameters.
 
     Args:
         rate: Model dropout rate.
